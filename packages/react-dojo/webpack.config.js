@@ -44,7 +44,17 @@ module.exports = {
         test: /\.(js|mjs|jsx)$/,
         loader: "babel-loader",
         options: {
-          presets: [["@babel/preset-react"], ["@babel/preset-flow"]],
+          presets: [
+            [
+              "@babel/preset-react",
+              {
+                development: true,
+                runtime: "automatic",
+                // runtime: "classic",
+              },
+            ],
+            ["@babel/preset-flow"],
+          ],
         },
       },
       {
@@ -60,10 +70,10 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify("development"),
-      __DEV__: true,
-      __PROFILE__: false,
       __UMD__: true,
+      __DEV__: true,
       __EXPERIMENTAL__: true,
+      __PROFILE__: false,
     }),
   ],
   devServer: {
