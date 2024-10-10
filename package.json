@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "debug:dev": "pnpm --filter react-dojo dev",
+    "react:dev": "pnpm --filter react-dojo dev",
     "docs:dev": "pnpm --filter rspress-docs dev"
   },
   "keywords": [],
