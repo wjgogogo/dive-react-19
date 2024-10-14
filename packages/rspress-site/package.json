@@ -11,6 +11,9 @@
     "rspress": "^1.31.0"
   },
   "devDependencies": {
+    "@rspress/plugin-playground": "^1.33.1",
+    "@rspress/plugin-preview": "^1.33.1",
+    "@rspress/plugin-shiki": "^1.33.1",
     "@types/node": "^16"
   }
 }

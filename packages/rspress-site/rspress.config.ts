@@ -1,5 +1,8 @@
 import * as path from "path";
 import { defineConfig } from "rspress/config";
+import { pluginShiki } from "@rspress/plugin-shiki";
+import { pluginPreview } from "@rspress/plugin-preview";
+import { pluginPlayground } from "@rspress/plugin-playground";
 
 export default defineConfig({
   root: path.join(__dirname, "docs"),
@@ -35,12 +38,23 @@ export default defineConfig({
       },
     ],
     sidebar: {
-      "/guide/": [
-        {
-          text: "源码解析",
-          items: [{ text: "什么是jsx？", link: "/guide/01-what-is-jsx" }],
-        },
-      ],
+      "/guide/": [{ text: "什么是 JSX ？", link: "/guide/01-what-is-jsx" }],
     },
+    lastUpdated: true,
+    lastUpdatedText: "最后更新时间",
+    outlineTitle: "大纲",
   },
+
+  markdown: {
+    showLineNumbers: true,
+  },
+  plugins: [
+    pluginShiki(),
+    pluginPreview({
+      defaultRenderMode: "pure",
+      iframeOptions: {
+        position: "fixed",
+      },
+    }) /*  pluginPlayground() */,
+  ],
 });

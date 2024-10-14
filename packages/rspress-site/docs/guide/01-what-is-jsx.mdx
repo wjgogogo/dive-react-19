@@ -1,0 +1,910 @@
+# 什么是 JSX ？
+
+我们使用 React 时最大的感受是它让可以用一种更直观、更声明式的方式来描述用户界面，即 JSX。JSX 的语法类似于 HTML，但它并不是 HTML，而是 JavaScript 的一种语法扩展。
+
+## JSX 的本质
+
+既然 JSX 并不是标准的三大件（HTML、CSS、JavaScript），那么它必然需要被转换（Transform）为某种形式才能在浏览器中运行。最常用的转换包括
+
+- Babel
+
+```json
+// 使用 @babel/preset-react 预设
+{
+  "presets": ["@babel/preset-react"]
+}
+```
+
+- TypeScript
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "jsx": "react"
+  }
+}
+```
+
+- ESBuild
+
+```js
+esbuild.build({
+  entryPoints: ["app.jsx"],
+  bundle: true,
+  outfile: "out.js",
+  jsx: "transform",
+});
+```
+
+- SWC (Speedy Web Compiler)：用 Rust 编写的快速 JavaScript/TypeScript 编译器，支持 JSX 转换
+
+```json
+// .swcrc
+{
+  "jsc": {
+    "parser": {
+      "syntax": "ecmascript",
+      "jsx": true
+    },
+    "transform": {
+      "react": {
+        "pragma": "React.createElement",
+        "pragmaFrag": "React.Fragment"
+      }
+    }
+  }
+}
+```
+
+### Babel Transform
+
+本节以 Babel 为准，其他编译器处理方式类似。
+
+:::info
+
+以 [@babel/preset-react](https://babeljs.io/docs/babel-preset-react) 7.25.7 版本为准，转换行为在未来可能会改变，主要包含以下两个插件：
+
+- [@babel/plugin-transform-react-jsx](https://babeljs.io/docs/babel-plugin-transform-react-jsx)：生产环境所使用的编译插件
+- [@babel/plugin-transform-react-jsx-development](https://babeljs.io/docs/babel-plugin-transform-react-jsx-development)：开发模式所使用的编译插件，提供更多开发所需要的源码信息
+
+:::
+
+`@babel/preset-react` 包含两种 runtime：
+
+- `automatic`：自动选择 runtime
+- `classic`：经典 runtime
+
+目前来说，`automatic` 是主流的 runtime，无需手动引入 `React`。
+
+以如下的代码为例：
+
+```jsx pure
+function Child() {
+  return <div>Child</div>;
+}
+function App() {
+  const element = <h1 style={{ color: "red" }}>Hello, world!</h1>;
+  console.log("🚀 ~ element:", element);
+  return (
+    <div>
+      {element} <Child />
+    </div>
+  );
+}
+```
+
+会被转换为：
+
+```js {4-6,9-14,16-18}
+// 自动引入 jsx 和 jsxs 函数
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+function Child() {
+  return /*#__PURE__*/ _jsx("div", {
+    children: "Child",
+  });
+}
+function App() {
+  const element = /*#__PURE__*/ _jsx("h1", {
+    style: {
+      color: "red",
+    },
+    children: "Hello, world!",
+  });
+  console.log("🚀 ~ element:", element);
+  return /*#__PURE__*/ _jsxs("div", {
+    children: [element, " ", /*#__PURE__*/ _jsx(Child, {})],
+  });
+}
+```
+
+而如果采用的 `classic` runtime，还必须手动引入 `React`，否则会报错。
+
+```jsx
+import React from "react";
+```
+
+转换结果如下：
+
+```jsx {3,6-14,16-22}
+// 与 automatic 的区别，需要引入 React，否则 React.createElement 会报错
+function Child() {
+  return /*#__PURE__*/ React.createElement("div", null, "Child");
+}
+function App() {
+  const element = /*#__PURE__*/ React.createElement(
+    "h1",
+    {
+      style: {
+        color: "red",
+      },
+    },
+    "Hello, world!"
+  );
+  console.log("🚀 ~ element:", element);
+  return /*#__PURE__*/ React.createElement(
+    "div",
+    null,
+    element,
+    " ",
+    /*#__PURE__*/ React.createElement(Child, null)
+  );
+}
+```
+
+在开发模式下，指定 `development` 为 `true`，可以提供更多开发所需要的源码信息。
+
+```json
+{
+  "presets": [
+    [
+      "@babel/preset-react",
+      {
+        "development": true,
+        "runtime": "automatic"
+      }
+    ]
+  ]
+}
+```
+
+代码转换结果如下：
+
+```js {4-17,20-36,38-66}
+var _jsxFileName = "xxx.jsx";
+import { jsxDEV as _jsxDEV } from "react/jsx-dev-runtime";
+function Child() {
+  return /*#__PURE__*/ _jsxDEV(
+    "div",
+    {
+      children: "Child",
+    },
+    void 0,
+    false,
+    {
+      fileName: _jsxFileName,
+      lineNumber: 2,
+      columnNumber: 10,
+    },
+    this
+  );
+}
+function App() {
+  const element = /*#__PURE__*/ _jsxDEV(
+    "h1",
+    {
+      style: {
+        color: "red",
+      },
+      children: "Hello, world!",
+    },
+    void 0,
+    false,
+    {
+      fileName: _jsxFileName,
+      lineNumber: 5,
+      columnNumber: 19,
+    },
+    this
+  );
+  console.log("🚀 ~ element:", element);
+  return /*#__PURE__*/ _jsxDEV(
+    "div",
+    {
+      children: [
+        element,
+        " ",
+        /*#__PURE__*/ _jsxDEV(
+          Child,
+          {},
+          void 0,
+          false,
+          {
+            fileName: _jsxFileName,
+            lineNumber: 9,
+            columnNumber: 17,
+          },
+          this
+        ),
+      ],
+    },
+    void 0,
+    true,
+    {
+      fileName: _jsxFileName,
+      lineNumber: 8,
+      columnNumber: 5,
+    },
+    this
+  );
+}
+```
+
+> [babel playground](https://babeljs.io/repl#?browsers=defaults%2C%20not%20ie%2011%2C%20not%20ie_mob%2011&build=&builtIns=false&corejs=3.21&spec=false&loose=false&code_lz=GYVwdgxgLglg9mABAYQBYwDYBMAUBKRAbwChFEAnAUyhHKQB4sYA3APjUy3oHom2BuYgF9ixUJFgJEAQQAOs_EVKIICAM5RElDJQC2lMJoC8ieqgCMiDQE8dRwoRVwMccgC5EAIipZPiIUKsABLaLgA0iADurtgAhDwWrIJkqmBqzpQAdC4A5jiegLwbgAF7iAB-Wjr6hm6eEdp6BlB4yRTUtEg4ymSMLKxdZET1VVBCphzYiNx9A6a8vcrNwkA&debug=false&forceAllTransforms=false&modules=false&shippedProposals=false&evaluate=false&fileSize=false&timeTravel=false&sourceType=module&lineWrap=true&presets=env%2Creact%2Cstage-2&prettier=true&targets=&version=7.25.8&externalPlugins=&assumptions=%7B%7D)
+
+无论是 `automatic` 还是 `classic`。本质都是将 JSX 转换成为了函数调用，而函数执行后会返回一个 `ReactElement` 的数据结构。
+
+比如上面的 `element` 就是 `ReactElement` 的数据结构，大概长这样：
+
+![](/react-element.png)
+
+## React 19 对 JSX 的升级
+
+React 19（包括 18 ） 对 JSX 的[升级提案](https://github.com/reactjs/rfcs/pull/107)主要体现在以下几个方面：
+
+- 废弃"模块模式"组件
+- 废弃函数组件上的 `defaultProps`
+- 废弃从对象中展开 `key`
+- 废弃字符串 `refs`（并移除生产模式的 `_owner` 字段）
+- 将 `ref` 提取移至类组件 render 时机和 `forwardRef` render 时机
+- 将 `defaultProps` 解析移至类组件 render 时机
+- 更改 JSX 转译器以使用新的元素创建方法
+  - 始终将 `children` 作为 props 传递
+  - 将 `key` 与其他 props 分开传递
+  - 在开发环境中
+    - 传递一个标志来确定是否为静态。
+    - 将 `__source` 和 `__self` 与其他 props 分开传递
+
+最终移除对 `forwardRef` 的需求，目标是使元素创建变得简单如下：
+
+```js
+function jsx(type, props, key) {
+  return {
+    $$typeof: ReactElementSymbol,
+    type,
+    key,
+    props,
+  };
+}
+```
+
+升级提案需要两方面的配合：
+
+1. Babel 对 JSX 处理的升级
+2. React 对 JSX 转换函数的逻辑升级
+
+### Babel 对 JSX 处理的升级
+
+#### runtime 为 `automatic`
+
+在开发模式下，即使用 `@babel/plugin-transform-react-jsx-development`。会将绝大部分 JSX 转换为 `_jsxDEV` 函数调用。
+
+```js
+function App() {
+  return (
+    <h1 key="key" style={{ color: "red" }}>
+      title
+    </h1>
+  );
+}
+```
+
+```js
+// 自动引入 jsxDEV 函数
+import { jsxDEV as _jsxDEV } from "react/jsx-dev-runtime";
+
+const element = /*#__PURE__*/ _jsxDEV(
+  "h1",
+  {
+    style: {
+      color: "red",
+    },
+    children: "title ",
+  },
+  "key",
+  false,
+  {
+    fileName: _jsxFileName,
+    lineNumber: 14,
+    columnNumber: 15,
+  },
+  this
+);
+```
+
+`jsxDEV` 函数类型：
+
+```ts
+type jsxDEV = (
+  type,
+  config,
+  maybeKey,
+  isStaticChildren,
+  source,
+  self
+) => ReactElement;
+```
+
+接收 6 个参数：
+
+- `type`：元素类型
+- `config`：即 props 对象，包含 `children` 等属性
+- `maybeKey`：单独剥离的 `key` 属性
+- `isStatic`：`chidren` 是否为静态
+- `source`：源码信息
+- `self`：当前组件实例，通常直接传入 `this` 主要在类组件才有意义
+
+`type` 包含以下几种类型：
+
+- 字符串：表示原生 DOM 组件，如 `div`
+- 函数：表示类、函数组件
+- Symbol(或者特殊字符串 polyfill，主要针对React 内置组件)：如 `Fragment`，`StrictMode` 等
+
+Babel 会根据 `type` 的类型，选择不同的转换逻辑。如果是原生标签（以小写开头的字符串），会转换为 `string` 类型，否则保持原样。
+
+```js
+function App() {
+  const element1 = <div />;
+  const element2 = <span />;
+
+  const element3 = <Test />;
+  const element4 = <component.Test />;
+
+  const element5 = <React.StrictMode></React.StrictMode>;
+  const element6 = <></>;
+}
+```
+
+会被转换为：
+
+```js
+import {
+  jsxDEV as _jsxDEV,
+  Fragment as _Fragment,
+} from "react/jsx-dev-runtime";
+function App() {
+  const element1 = /*#__PURE__*/ _jsxDEV(
+    "div"
+    /** ... */
+  );
+  const element2 = /*#__PURE__*/ _jsxDEV(
+    "span"
+    /** ... */
+  );
+
+  const element3 = /*#__PURE__*/ _jsxDEV(
+    Test
+    /** ... */
+  );
+  const element4 = /*#__PURE__*/ _jsxDEV(
+    component.Test
+    /** ... */
+  );
+
+  const element5 = /*#__PURE__*/ _jsxDEV(
+    React.StrictMode
+    /** ... */
+  );
+  const element6 = /*#__PURE__*/ _jsxDEV(_Fragment /** ... */);
+}
+```
+
+:::tip
+这也是为什么 React 希望组件名**以大写字母开头**，因为这样可以避免与原生标签混淆，导致 Babel 转换错误。
+:::
+
+`config` 对象，即对应 props 属性，会将除了 `key` 之外的所有属性收敛到其中，包含 `children` 属性（_`children` 在以前的版本中会解析为 `jsxDev` 单独的参数_ ）。
+
+```js
+const element = (
+  <h1 key="key" ref={ref} other={other}>
+    title
+  </h1>
+);
+```
+
+会被转换为：
+
+```js
+const element = /*#__PURE__*/ _jsxDEV(
+  "h1",
+  {
+    ref: ref,
+    other: other,
+    children: "title",
+  },
+  "key", // key 会被单独提出来，便于提高后续 React 解析性能
+  false,
+  {
+    fileName: _jsxFileName,
+    lineNumber: 5,
+    columnNumber: 15,
+  },
+  this
+);
+```
+
+`maybeKey` 用于单独提取 `key` 属性，为什么会叫 `maybeKey` 呢？
+
+比如以下场景：
+
+```js
+const element = (
+  <h1 key="key" {...props}>
+    title
+  </h1>
+);
+```
+
+`props` 里面说不定本身就包含 `key` 属性，而单纯从静态分析，Babel 是无法得知这一点的。虽然如此，上面的代码依旧会被解析成：
+
+```js
+const element = /*#__PURE__*/ _jsxDEV(
+  "h1",
+  {
+    ...props,
+    children: "title",
+  },
+  "key",
+  false,
+  {
+    fileName: _jsxFileName,
+    lineNumber: 5,
+    columnNumber: 15,
+  },
+  this
+);
+```
+
+:::info
+现阶段，React 会在运行时依旧从 `config` 中解析 `key` 属性，但是会抛出 warning 信息，提示 `key` 应该被单独指定出来。下一步（_不能确定什么时候_）会停止从 `config` 中解析 `key`
+:::
+
+现阶段还有一个问题：
+
+> An unresolved issue is how we distinguish `<div key="Hi" {...props} />` from `<div {...props} key="Hi" />` which currently have different semantics depending on if props has a key.
+
+如果是：
+
+```js
+const element = (
+  <h1 {...props} key="key">
+    title
+  </h1>
+);
+```
+
+会被转换为：
+
+```js
+import { createElement as _createElement } from "react";
+const element = /*#__PURE__*/ _createElement(
+  "h1",
+  {
+    ...props,
+    key: "key",
+    __self: this,
+    __source: {
+      fileName: _jsxFileName,
+      lineNumber: 2,
+      columnNumber: 15,
+    },
+  },
+  "title"
+);
+```
+
+Babel 会使用 `React.createElement` 来代替 `jsxDEV` 函数。
+
+:::note
+对这样的处理，笔者也有点疑惑。按理说，相比较于`<div key="Hi" {...props} />`, `<div {...props} key="Hi" />` 更应该解析为`jsxDEV("div",config,"key")`。
+
+**Babel 的对此的编译行为未来可能会有所改变**，在此之前，将 `key` 放在前面，避免解析为 `React.createElement`，能获得更好性能。
+:::
+
+`isStatic` 用于标记 `children` 是否为静态。静态意味着 `children` 存在，且**数量**是固定的。比如
+
+```js
+const noChildren = <div />;
+
+const oneChild = <div>Hi</div>;
+
+const multipleChildren = (
+  <div>
+    <span>Hi</span>
+    <span>Hi</span>
+  </div>
+);
+
+const multipleChildren1 = (
+  <div>
+    {getChild()}
+    {someCondition ? getChild1() : getChild2()}
+  </div>
+);
+
+const dynamicChildren = (
+  <div>
+    {items.map((item) => (
+      <span key={item.id}>{item.name}</span>
+    ))}
+  </div>
+);
+```
+
+会被转换为：
+
+```js
+const noChildren = /*#__PURE__*/ _jsxDEV(
+  "div",
+  {},
+  void 0,
+  false
+  /** ... */
+);
+
+const oneChild = /*#__PURE__*/ _jsxDEV(
+  "div",
+  {
+    children: "Hi",
+  },
+  void 0,
+  false
+  /** ... */
+);
+
+const multipleChildren = /*#__PURE__*/ _jsxDEV(
+  "div",
+  {
+    children: [
+      /*#__PURE__*/ _jsxDEV(
+        "span",
+        {
+          children: "Hi",
+        },
+        void 0,
+        false
+        /** ... */
+      ),
+      /*#__PURE__*/ _jsxDEV(
+        "span",
+        {
+          children: "Hi",
+        },
+        void 0,
+        false
+        /** ... */
+      ),
+    ],
+  },
+  void 0,
+  true
+  /** ... */
+);
+const multipleChildren1 = /*#__PURE__*/ _jsxDEV(
+  "div",
+  {
+    children: [getChild(), someCondition ? getChild1() : getChild2()],
+  },
+  void 0,
+  true
+  /** ... */
+);
+const dynamicChildren = /*#__PURE__*/ _jsxDEV(
+  "div",
+  {
+    children: items.map((item) =>
+      /*#__PURE__*/ _jsxDEV(
+        "span",
+        {
+          children: item.name,
+        },
+        item.id,
+        false
+        /** ... */
+      )
+    ),
+  },
+  void 0,
+  false
+  /** ... */
+);
+```
+
+`isStatic` 和 Babel 对`config.children` 的解析相关联：
+
+- 不存在 `children` 时，`config`中也不存在 `children` 属性，`isStatic` 为 `false`
+- 只存在一个 `children` 时，`config`中虽然存在 `children` 属性，单不是数组类型，`isStatic` 为 `false`
+- 存在多个 `children` 时，`config`中存在 `children` 属性，且是数组类型
+  - 如果 `children` 中不是以`map` 函数形式存在，数量可数，`isStatic` 为 `true`, 否则 `isStatic` 为 `false`
+
+简单来说，当`config.chidren`被解析为数组类型时，且数量是静态，可数的。`isStatic` 为 `true`。
+
+:::note
+`isStatic` 属性名会让人误解为：`chidren` 是完全不可变的。比如 `div>Hi</div>` 或者 `<div><span color="red"/></div>`这样，而不是包含动态属性，比如 `<div>{getChild()}</div>` 或者 `<div><span color={dynamic}/></div>`。
+现阶段，Babel 主要是从 `children` 的个数来判断是否为静态。
+:::
+
+在生产模式下，即使用 `@babel/plugin-transform-react-jsx`。会将绝大部分 JSX 转换为 `jsx` 或者 `jsxs` 函数调用。
+
+类型如下：
+
+```ts
+type jsx = (type, config, maybeKey) => ReactElement;
+type jsxs = jsx;
+```
+
+相比于开发环境会少`isStatic`, 和`source`, `self` 这两个主要用于调试信息的参数。
+
+`type`, `config`,`maybeKey`转换方式和开发模式类似，`jsx`和`jsxs`的区别在于:
+
+- 如果在开发模式化，`isStatic` 被解析为 `true` 的情况，生产模式会转换为 `jsxs` 函数调用
+- 如果在开发模式化，`isStatic` 被解析为 `false` 的情况，生产模式会转换为 `jsx` 函数调用
+
+还是以这段代码举例：
+
+```js
+const noChildren = <div />;
+
+const oneChild = <div>Hi</div>;
+
+const multipleChildren = (
+  <div>
+    <span>Hi</span>
+    <span>Hi</span>
+  </div>
+);
+
+const multipleChildren1 = (
+  <div>
+    {getChild()}
+    {someCondition ? getChild1() : getChild2()}
+  </div>
+);
+
+const dynamicChildren = (
+  <div>
+    {items.map((item) => (
+      <span key={item.id}>{item.name}</span>
+    ))}
+  </div>
+);
+```
+
+会被转换为：
+
+```js
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+
+const noChildren = /*#__PURE__*/ _jsx("div", {});
+
+const oneChild = /*#__PURE__*/ _jsx("div", {
+  children: "Hi",
+});
+
+const multipleChildren = /*#__PURE__*/ _jsxs("div", {
+  children: [
+    /*#__PURE__*/ _jsx("span", {
+      children: "Hi",
+    }),
+    /*#__PURE__*/ _jsx("span", {
+      children: "Hi",
+    }),
+  ],
+});
+
+const multipleChildren1 = /*#__PURE__*/ _jsxs("div", {
+  children: [getChild(), someCondition ? getChild1() : getChild2()],
+});
+
+const dynamicChildren = /*#__PURE__*/ _jsx("div", {
+  children: items.map((item) =>
+    /*#__PURE__*/ _jsx(
+      "span",
+      {
+        children: item.name,
+      },
+      item.id
+    )
+  ),
+});
+```
+
+:::info
+上文提到的开发模式会将`<div {...props} key="Hi" />` 转换为 `React.createElement` 的行为。在生产模式依旧存在。
+:::
+
+#### runtime 为 `classic`
+
+当 runtime 为 `classic` 时，无论是开发模式，还是生产模式，**所有的 JSX 都会转换 `React.createElement` 函数**。
+
+`React.createElement` 类型：
+
+```ts
+type createElement = (type, config, children) => ReactElement;
+```
+
+- `type` 转换方式和 `runtime` 为 `automatic` 时一致
+- `config` 中包含除 `chidren` 的所有 props，包含 `key`，`children` 会被单独提出来
+
+比如：
+
+```js
+import React from "react";
+
+function Child() {
+  return <div>Child</div>;
+}
+
+function App() {
+  const element = (
+    <h1 key={"key"} style={{ color: "red" }} {...props}>
+      Hello, world!
+    </h1>
+  );
+
+  return (
+    <div {...props} key={"key"}>
+      {element} <Child />
+    </div>
+  );
+}
+```
+
+开发模式下，会被转换为：
+
+```js
+function _extends() {
+  return (
+    (_extends = Object.assign
+      ? Object.assign.bind()
+      : function (n) {
+          for (var e = 1; e < arguments.length; e++) {
+            var t = arguments[e];
+            for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]);
+          }
+          return n;
+        }),
+    _extends.apply(null, arguments)
+  );
+}
+
+import React from "react";
+
+function Child() {
+  return /*#__PURE__*/ React.createElement(
+    "div",
+    {
+      __self: this,
+      __source: {
+        fileName: _jsxFileName,
+        lineNumber: 13,
+        columnNumber: 10,
+      },
+    },
+    "Child"
+  );
+}
+
+function App() {
+  const element = /*#__PURE__*/ React.createElement(
+    "h1",
+    _extends(
+      {
+        key: "key",
+        style: {
+          color: "red",
+        },
+      },
+      props,
+      {
+        __self: this,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 17,
+          columnNumber: 5,
+        },
+      }
+    ),
+    "Hello, world!"
+  );
+  return /*#__PURE__*/ React.createElement(
+    "div",
+    _extends({}, props, {
+      key: "key",
+      __self: this,
+      __source: {
+        fileName: _jsxFileName,
+        lineNumber: 23,
+        columnNumber: 5,
+      },
+    }),
+    element,
+    " ",
+    /*#__PURE__*/ React.createElement(Child, {
+      __self: this,
+      __source: {
+        fileName: _jsxFileName,
+        lineNumber: 24,
+        columnNumber: 17,
+      },
+    })
+  );
+}
+```
+
+生产模式下，会被转换为：
+
+```js
+function _extends() {
+  return (
+    (_extends = Object.assign
+      ? Object.assign.bind()
+      : function (n) {
+          for (var e = 1; e < arguments.length; e++) {
+            var t = arguments[e];
+            for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]);
+          }
+          return n;
+        }),
+    _extends.apply(null, arguments)
+  );
+}
+
+import React from "react";
+
+function Child() {
+  return /*#__PURE__*/ React.createElement("div", null, "Child");
+}
+
+function App() {
+  const element = /*#__PURE__*/ React.createElement(
+    "h1",
+    _extends(
+      {
+        key: "key",
+        style: {
+          color: "red",
+        },
+      },
+      props
+    ),
+    "Hello, world!"
+  );
+  return /*#__PURE__*/ React.createElement(
+    "div",
+    _extends({}, props, {
+      key: "key",
+    }),
+    element,
+    " ",
+    /*#__PURE__*/ React.createElement(Child, null)
+  );
+}
+```
+
+开发模式相比于生产模式，也仅仅多了一些调试信息，比如 `config.__self`, `config.__source`。
+
+### React 对 JSX 转换函数的逻辑升级
+
+```js title="test.js"
+const Sucrase = require("sucrase");
+const result = Sucrase.transform(code, {
+  transforms: ["jsx"],
+});
+```
+
+> 参考
+>
+> - [RFC: createElement changes and surrounding deprecations](https://github.com/reactjs/rfcs/pull/107)
+> - [create-element-changes](https://github.com/reactjs/rfcs/blob/createlement-rfc/text/0000-create-element-changes.md)
