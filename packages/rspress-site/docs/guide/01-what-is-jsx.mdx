@@ -287,7 +287,7 @@ function jsx(type, props, key) {
 
 #### runtime 为 `automatic`
 
-在开发模式下，即使用 `@babel/plugin-transform-react-jsx-development`。会将绝大部分 JSX 转换为 `_jsxDEV` 函数调用。
+在开发模式下，即使用 `@babel/plugin-transform-react-jsx-development`。会将绝大部分 JSX 转换为 `jsxDEV` 函数调用。
 
 ```js
 function App() {
@@ -735,7 +735,8 @@ type createElement = (type, config, children) => ReactElement;
 ```
 
 - `type` 转换方式和 `runtime` 为 `automatic` 时一致
-- `config` 中包含除 `chidren` 的所有 props，包含 `key`，`children` 会被单独提出来
+- `config` 中包含除 `chidren` 的所有 props，包含 `key`，`ref`
+  - `children` 会被单独提出来，从第三个参数开始，平铺传入，后续的入参都会被视为是 children 的一项
 
 比如：
 
@@ -829,6 +830,7 @@ function App() {
         columnNumber: 5,
       },
     }),
+    // 从第三个参数开始，后续的入参都会被视为是 children 的一项
     element,
     " ",
     /*#__PURE__*/ React.createElement(Child, {
@@ -886,6 +888,7 @@ function App() {
     _extends({}, props, {
       key: "key",
     }),
+    // 从第三个参数开始，后续的入参都会被视为是 children 的一项
     element,
     " ",
     /*#__PURE__*/ React.createElement(Child, null)
@@ -897,12 +900,460 @@ function App() {
 
 ### React 对 JSX 转换函数的逻辑升级
 
-```js title="test.js"
-const Sucrase = require("sucrase");
-const result = Sucrase.transform(code, {
-  transforms: ["jsx"],
-});
+#### jsxDEV 函数
+
+先从最复杂开发模式下的 `runtime` 为 `automatic` 的情况开始。从上可知，JSX 会被转换成`jsxDEV` 函数调用。
+
+`jsxDEV` 核心功能包括：
+
+1. 类型检查：
+   - 验证 JSX 元素的类型是否有效
+   - 如果类型无效，会给出详细的错误信息
+2. 子元素处理：
+   - 验证子元素的 key 属性
+   - 处理静态子元素和动态子元素
+3. 属性处理：
+   - 处理 key 和 ref 属性
+   - 警告不正确的 key 使用方式
+   - 创建 props 对象，移除保留属性（如 key 和 ref）
+4. 默认属性处理：
+   - 如果组件有 defaultProps，不会再将其合并到 props 中
+   - 类组件会在 render 阶段才真正的处理 defaultProps
+5. 创建 React 元素：
+
+   - 最后调用 ReactElement 函数创建 React 元素
+
+6. 性能优化：
+   - 代码中包含一些性能优化措施，如尽可能重用原始的 props 对象。
+7. 特性开关：
+   - 代码中使用了多个特性开关（如 enableRefAsProp、disableStringRefs 等），用于控制不同的 React 特性。
+
+:::info
+`jsxDEV` 函数代码中包含许多仅在开发环境（**DEV**）下运行的检查和警告。这些检查帮助开发者发现潜在的问题，如类型错误、key 使用不当等。
+
+**下方给出的源码中只会保留相对重要的主链路逻辑，省略了部分校验的逻辑**
+:::
+
+```js title="react/packages/react/src/jsx/ReactJSXElement.js" {}
+/**
+ * JSX 转换的入口函数，它调用 jsxDEVImpl 来实际处理 JSX 转换
+ * https://github.com/reactjs/rfcs/pull/107
+ */
+export function jsxDEV(type, config, maybeKey, isStaticChildren, source, self) {
+  return jsxDEVImpl(
+    type,
+    config,
+    maybeKey,
+    isStaticChildren,
+    source,
+    self,
+    // 开发环境下的特性开关，主要用于获取错误堆栈和优化异步调用栈的 debug
+    __DEV__ && enableOwnerStacks ? Error("react-stack-top-frame") : undefined,
+    __DEV__ && enableOwnerStacks ? createTask(getTaskName(type)) : undefined
+  );
+}
+
+function jsxDEVImpl(
+  type,
+  config,
+  maybeKey,
+  isStaticChildren,
+  source,
+  self,
+  debugStack,
+  debugTask
+) {
+  if (__DEV__) {
+    /**
+     * 🚧 省略掉对 type，children key 的检查和警告 🚧
+     */
+
+    // 现阶段，依旧会从 config 中获取 key 值，但是为了下一阶段准备，会警告 key 使用不当
+    // Warn about key spread regardless of whether the type is valid.
+    if (hasOwnProperty.call(config, "key")) {
+      const componentName = getComponentNameFromType(type);
+      const keys = Object.keys(config).filter((k) => k !== "key");
+      const beforeExample =
+        keys.length > 0
+          ? "{key: someKey, " + keys.join(": ..., ") + ": ...}"
+          : "{key: someKey}";
+      if (!didWarnAboutKeySpread[componentName + beforeExample]) {
+        const afterExample =
+          keys.length > 0 ? "{" + keys.join(": ..., ") + ": ...}" : "{}";
+        console.error(
+          'A props object containing a "key" prop is being spread into JSX:\n' +
+            "  let props = %s;\n" +
+            "  <%s {...props} />\n" +
+            "React keys must be passed directly to JSX without using spread:\n" +
+            "  let props = %s;\n" +
+            "  <%s key={someKey} {...props} />",
+          beforeExample,
+          componentName,
+          afterExample,
+          componentName
+        );
+        didWarnAboutKeySpread[componentName + beforeExample] = true;
+      }
+    }
+
+    let key = null;
+    let ref = null;
+
+    // 下面的注释提到了对 <div {...props} key="Hi" or <div key="Hi" {...props} /> 两种情况的处理还有点问题
+    // Currently, key can be spread in as a prop. This causes a potential
+    // issue if key is also explicitly declared (ie. <div {...props} key="Hi" />
+    // or <div key="Hi" {...props} /> ). We want to deprecate key spread,
+    // but as an intermediary step, we will use jsxDEV for everything except
+    // <div {...props} key="Hi" />, because we aren't currently able to tell if
+    // key is explicitly declared to be undefined or not.
+    if (maybeKey !== undefined) {
+      if (__DEV__) {
+        checkKeyStringCoercion(maybeKey);
+      }
+      key = "" + maybeKey;
+    }
+    // 依旧会从 config 中获取 key 值
+    if (hasValidKey(config)) {
+      if (__DEV__) {
+        checkKeyStringCoercion(config.key);
+      }
+      key = "" + config.key;
+    }
+
+    // 从 config 中获取 ref 值, 在 19 中，enableRefAsProp 和 disableStringRefs 都是 true
+    // 下面的逻辑不用关心
+    if (hasValidRef(config)) {
+      if (!enableRefAsProp) {
+        ref = config.ref;
+        if (!disableStringRefs) {
+          ref = coerceStringRef(ref, getOwner(), type);
+        }
+      }
+      if (!disableStringRefs) {
+        warnIfStringRefCannotBeAutoConverted(config, self);
+      }
+    }
+
+    let props;
+    // const enableFastJSXWithoutStringRefs = enableRefAsProp && disableStringRefs;
+    // 所以第一个条件肯定是满足的，只需要关心 `!("key" in config)` 的情况
+    if (
+      (enableFastJSXWithoutStringRefs ||
+        (enableRefAsProp && !("ref" in config))) &&
+      !("key" in config)
+    ) {
+      // 性能优化措施，尽可能重用原始的 props 对象
+      // If key was not spread in, we can reuse the original props object. This
+      // only works for `jsx`, not `createElement`, because `jsx` is a compiler
+      // target and the compiler always passes a new object. For `createElement`,
+      // we can't assume a new object is passed every time because it can be
+      // called manually.
+      //
+      // Spreading key is a warning in dev. In a future release, we will not
+      // remove a spread key from the props object. (But we'll still warn.) We'll
+      // always pass the object straight through.
+      props = config;
+    } else {
+      // We need to remove reserved props (key, prop, ref). Create a fresh props
+      // object and copy over all the non-reserved props. We don't use `delete`
+      // because in V8 it will deopt the object to dictionary mode.
+      props = {};
+      for (const propName in config) {
+        // Skip over reserved prop names
+        if (propName !== "key" && (enableRefAsProp || propName !== "ref")) {
+          // ref 不会再作为保留属性，而是会保留在 props 中
+          if (enableRefAsProp && !disableStringRefs && propName === "ref") {
+            props.ref = coerceStringRef(config[propName], getOwner(), type);
+          } else {
+            props[propName] = config[propName];
+          }
+        }
+      }
+    }
+
+    // 在 19 中，disableDefaultPropsExceptForClasses 为 true
+    // 所以不会再将 defaultProps 合并到 props 中
+    if (!disableDefaultPropsExceptForClasses) {
+      // Resolve default props
+      if (type && type.defaultProps) {
+        const defaultProps = type.defaultProps;
+        for (const propName in defaultProps) {
+          if (props[propName] === undefined) {
+            props[propName] = defaultProps[propName];
+          }
+        }
+      }
+    }
+
+    // 最后调用 ReactElement 函数创建 React 元素
+    return ReactElement(
+      type,
+      key,
+      ref,
+      self,
+      source,
+      getOwner(),
+      props,
+      debugStack,
+      debugTask
+    );
+  }
+}
 ```
+
+```js title="react/packages/shared/ReactFeatureFlags.js"
+// 19 中上面涉及到的几个特性开关都是 true
+// Passes `ref` as a normal prop instead of stripping it from the props object
+// during element creation.
+export const enableRefAsProp = true;
+export const disableStringRefs = true;
+
+// TODO: Land at Meta before removing.
+export const disableDefaultPropsExceptForClasses = true;
+```
+
+```js title="react/packages/react/src/jsx/ReactJSXElement.js"
+function ReactElement(
+  type,
+  key,
+  _ref,
+  self,
+  source,
+  owner,
+  props,
+  debugStack,
+  debugTask
+) {
+  let ref;
+  if (enableRefAsProp) {
+    // When enableRefAsProp is on, ignore whatever was passed as the ref
+    // argument and treat `props.ref` as the source of truth. The only thing we
+    // use this for is `element.ref`, which will log a deprecation warning on
+    // access. In the next release, we can remove `element.ref` as well as the
+    // `ref` argument.
+    const refProp = props.ref;
+
+    // An undefined `element.ref` is coerced to `null` for
+    // backwards compatibility.
+    ref = refProp !== undefined ? refProp : null;
+  } else {
+    ref = _ref;
+  }
+
+  // 分不同的情况构建 element，主要区别在于 ref 的处理
+  let element;
+  if (__DEV__ && enableRefAsProp) {
+    // In dev, make `ref` a non-enumerable property with a warning. It's non-
+    // enumerable so that test matchers and serializers don't access it and
+    // trigger the warning.
+    //
+    // `ref` will be removed from the element completely in a future release.
+    element = {
+      // This tag allows us to uniquely identify this as a React Element
+      $$typeof: REACT_ELEMENT_TYPE,
+
+      // Built-in properties that belong on the element
+      type,
+      key,
+
+      props,
+
+      // Record the component responsible for creating this element.
+      _owner: owner,
+    };
+    if (ref !== null) {
+      Object.defineProperty(element, "ref", {
+        enumerable: false,
+        get: elementRefGetterWithDeprecationWarning,
+      });
+    } else {
+      // Don't warn on access if a ref is not given. This reduces false
+      // positives in cases where a test serializer uses
+      // getOwnPropertyDescriptors to compare objects, like Jest does, which is
+      // a problem because it bypasses non-enumerability.
+      //
+      // So unfortunately this will trigger a false positive warning in Jest
+      // when the diff is printed:
+      //
+      //   expect(<div ref={ref} />).toEqual(<span ref={ref} />);
+      //
+      // A bit sketchy, but this is what we've done for the `props.key` and
+      // `props.ref` accessors for years, which implies it will be good enough
+      // for `element.ref`, too. Let's see if anyone complains.
+      Object.defineProperty(element, "ref", {
+        enumerable: false,
+        value: null,
+      });
+    }
+  } else if (!__DEV__ && disableStringRefs) {
+    // In prod, `ref` is a regular property and _owner doesn't exist.
+    element = {
+      // This tag allows us to uniquely identify this as a React Element
+      $$typeof: REACT_ELEMENT_TYPE,
+
+      // Built-in properties that belong on the element
+      type,
+      key,
+      ref,
+
+      props,
+    };
+  } else {
+    // In prod, `ref` is a regular property. It will be removed in a
+    // future release.
+    element = {
+      // This tag allows us to uniquely identify this as a React Element
+      $$typeof: REACT_ELEMENT_TYPE,
+
+      // Built-in properties that belong on the element
+      type,
+      key,
+      ref,
+
+      props,
+
+      // Record the component responsible for creating this element.
+      _owner: owner,
+    };
+  }
+
+  /**
+   * 🚧 省略掉对 element 的开发时 debug 属性的处理 🚧
+   */
+
+  return element;
+}
+```
+
+经过上面的流程，函数`jsxDEV` 将编译后 JSX 对象转换为 ReactElement 元素，这个元素是 React 内部用于描述组件树的节点，作为 React 渲染和更新机制的输入。
+
+##### 性能提升
+
+Babel 会将 JSX 的 props 使用一个新的对象来承载，在以前的版本中，`jsxDEV` 还是会创建一个新的对象，用于承载剔除掉 `ref`，`key`等保留属性，而现在，会尽可能重用这个对象，以减少内存分配和垃圾回收的负担。
+
+:::details 性能问题
+![](/jsx-performance-issue.png)
+
+> https://github.com/reactjs/rfcs/pull/107#issuecomment-1709063073
+
+:::
+
+生产模式下的 `jsx` & `jsxs` 函数本质就是`jsxProd` 函数，即 `jsxDEV` 函数去除了校验逻辑的版本，不再赘述。
+
+:::tip
+ReactElement 元素 和 Fiber 节点是不同的，后文会详解介绍 Fiber 节点，注意不要混淆了。
+:::
+
+#### createElement 函数
+
+上面提到有些特殊情况，JSX 会被转换成 `createElement` 函数调用。下面来看下 `createElement` 函数的实现。
+
+```js title="react/packages/react/src/jsx/ReactJSXElement.js"
+export function createElement(type, config, children) {
+  /**
+   * 🚧 省略掉对 type，children key 的检查和警告 🚧
+   */
+
+  let propName;
+
+  // Reserved names are extracted
+  const props = {};
+
+  let key = null;
+  let ref = null;
+
+  // config 中包含除 chidren 的所有 props，包含 key，ref
+  if (config != null) {
+    if (hasValidRef(config)) {
+      if (!enableRefAsProp) {
+        ref = config.ref;
+        if (!disableStringRefs) {
+          ref = coerceStringRef(ref, getOwner(), type);
+        }
+      }
+
+      if (__DEV__ && !disableStringRefs) {
+        warnIfStringRefCannotBeAutoConverted(config, config.__self);
+      }
+    }
+    if (hasValidKey(config)) {
+      if (__DEV__) {
+        checkKeyStringCoercion(config.key);
+      }
+      key = "" + config.key;
+    }
+
+    // 将 config 中除 key之外的属性添加到 props 对象中，由于每次都会构建新的 props 对象，性能会差点
+    // Remaining properties are added to a new props object
+    for (propName in config) {
+      if (
+        hasOwnProperty.call(config, propName) &&
+        // Skip over reserved prop names
+        propName !== "key" &&
+        (enableRefAsProp || propName !== "ref") &&
+        // Even though we don't use these anymore in the runtime, we don't want
+        // them to appear as props, so in createElement we filter them out.
+        // We don't have to do this in the jsx() runtime because the jsx()
+        // transform never passed these as props; it used separate arguments.
+        propName !== "__self" &&
+        propName !== "__source"
+      ) {
+        if (enableRefAsProp && !disableStringRefs && propName === "ref") {
+          props.ref = coerceStringRef(config[propName], getOwner(), type);
+        } else {
+          props[propName] = config[propName];
+        }
+      }
+    }
+  }
+
+  // 从第三个参数开始，后续的入参都会被视为是 children 的一项，将其收敛到 props 属性中
+  // Children can be more than one argument, and those are transferred onto
+  // the newly allocated props object.
+  const childrenLength = arguments.length - 2;
+  if (childrenLength === 1) {
+    props.children = children;
+  } else if (childrenLength > 1) {
+    const childArray = Array(childrenLength);
+    for (let i = 0; i < childrenLength; i++) {
+      childArray[i] = arguments[i + 2];
+    }
+    if (__DEV__) {
+      if (Object.freeze) {
+        Object.freeze(childArray);
+      }
+    }
+    props.children = childArray;
+  }
+
+  // 与 jsxDEV 不同的是，少了特性开关，所以组件的 defaultProps，会和以前版本一样其合并到 props 中
+  // Resolve default props
+  if (type && type.defaultProps) {
+    const defaultProps = type.defaultProps;
+    for (propName in defaultProps) {
+      if (props[propName] === undefined) {
+        props[propName] = defaultProps[propName];
+      }
+    }
+  }
+
+  return ReactElement(
+    type,
+    key,
+    ref,
+    undefined,
+    undefined,
+    getOwner(),
+    props,
+    __DEV__ && enableOwnerStacks ? Error("react-stack-top-frame") : undefined,
+    __DEV__ && enableOwnerStacks ? createTask(getTaskName(type)) : undefined
+  );
+}
+```
+
+:::tip
+我们偶尔可能也会用到[`React.cloneElement`](https://react.dev/reference/react/cloneElement) 函数，它主要用于克隆元素，并进行一些扩展。核心代码和 `React.createElement` 函数流程大致一致，不再赘述。
+:::
 
 > 参考
 >

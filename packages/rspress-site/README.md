@@ -21,6 +21,8 @@ gcl https://github.com/facebook/react.git src/react
 - 架构预览
 - How to debug & use repo?
 - What's jsx? -> babel playground
+- Open source
+  - check and warning
 - Workflow
 	- Render
 		- Mount
