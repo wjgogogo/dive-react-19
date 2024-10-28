@@ -8,7 +8,9 @@
       "type": "chrome",
       "request": "launch",
       "name": "启动 react debug",
-      "runtimeExecutable": "canary",
+      // 如果安装了 canary 版本，可以切换到 canary 版本
+      // "runtimeExecutable": "canary",
+      "runtimeExecutable": "stable",
       "url": "http://localhost:8080",
       "webRoot": "${workspaceFolder}/packages/react-dojo",
       "skipFiles": ["**/webpack/**"]

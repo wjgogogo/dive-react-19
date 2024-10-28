@@ -38,7 +38,10 @@ export default defineConfig({
       },
     ],
     sidebar: {
-      "/guide/": [{ text: "什么是 JSX ？", link: "/guide/01-what-is-jsx" }],
+      "/guide/": [
+        { text: "如何调试 React 源码？", link: "/guide/how-to-debug" },
+        { text: "什么是 JSX ？", link: "/guide/what-is-jsx" },
+      ],
     },
     lastUpdated: true,
     lastUpdatedText: "最后更新时间",

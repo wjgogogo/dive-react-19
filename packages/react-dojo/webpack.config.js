@@ -45,6 +45,7 @@ module.exports = {
         loader: "babel-loader",
         options: {
           presets: [
+            "@babel/preset-env",
             [
               "@babel/preset-react",
               {
@@ -70,7 +71,6 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify("development"),
-      __UMD__: true,
       __DEV__: true,
       __EXPERIMENTAL__: true,
       __PROFILE__: false,

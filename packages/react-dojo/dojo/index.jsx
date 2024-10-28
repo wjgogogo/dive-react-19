@@ -1,13 +1,27 @@
-import * as React from "react";
-import * as ReactDOM from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import "./index.css";
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+const root = createRoot(document.getElementById("root"));
 
 console.log("🚀 ~ root:", root);
 
-function Test(){
-  return <h1>test</h1>
+const props = {};
+
+function Child() {
+  return <div>Child</div>;
+}
+function App() {
+  const element = (
+    <h1 key={"key"} className="h1">
+      Hello, world!
+    </h1>
+  );
+
+  return (
+    <div {...props} key={"key"}>
+      {element} <Child />
+    </div>
+  );
 }
 
-root.render(<Test />);
+root.render(<App />);
