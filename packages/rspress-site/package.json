@@ -8,12 +8,12 @@
     "preview": "rspress preview"
   },
   "dependencies": {
-    "rspress": "^1.31.0"
+    "rspress": "^1.35.2"
   },
   "devDependencies": {
-    "@rspress/plugin-playground": "^1.33.1",
-    "@rspress/plugin-preview": "^1.33.1",
-    "@rspress/plugin-shiki": "^1.33.1",
-    "@types/node": "^16"
+    "@rspress/plugin-playground": "^1.35.2",
+    "@rspress/plugin-preview": "^1.35.2",
+    "@rspress/plugin-shiki": "^1.35.2",
+    "@types/node": "^16.18.115"
   }
 }

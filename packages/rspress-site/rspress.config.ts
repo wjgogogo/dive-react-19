@@ -6,6 +6,7 @@ import { pluginPlayground } from "@rspress/plugin-playground";
 
 export default defineConfig({
   root: path.join(__dirname, "docs"),
+  globalStyles: path.join(__dirname, "theme/style.css"),
   title: "Rspress",
   description: "Rspack-based Static Site Generator",
   icon: "/rspress-icon.png",
@@ -31,10 +32,6 @@ export default defineConfig({
         text: "源码解析",
         link: "/guide/",
         activeMatch: "/guide/",
-      },
-      {
-        text: "API",
-        link: "https://rspress.dev/api/index.html",
       },
     ],
     sidebar: {
