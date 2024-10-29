@@ -5,7 +5,8 @@
   "description": "",
   "scripts": {
     "react:dev": "pnpm --filter react-dojo dev",
-    "docs:dev": "pnpm --filter rspress-docs dev"
+    "docs:dev": "pnpm --filter rspress-docs dev",
+    "docs:build": "pnpm --filter rspress-docs build"
   },
   "keywords": [],
   "author": "",

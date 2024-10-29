@@ -5,6 +5,7 @@ import { pluginPreview } from "@rspress/plugin-preview";
 import { pluginPlayground } from "@rspress/plugin-playground";
 
 export default defineConfig({
+  base: "/dive-react-19/",
   root: path.join(__dirname, "docs"),
   globalStyles: path.join(__dirname, "theme/style.css"),
   title: "Rspress",
