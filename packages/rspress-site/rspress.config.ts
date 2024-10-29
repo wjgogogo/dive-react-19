@@ -41,9 +41,17 @@ export default defineConfig({
         { text: "什么是 JSX ？", link: "/guide/what-is-jsx" },
       ],
     },
+    enableAppearanceAnimation: true,
+    enableScrollToTop: true,
     lastUpdated: true,
     lastUpdatedText: "最后更新时间",
     outlineTitle: "大纲",
+    prevPageText: "上一页",
+    nextPageText: "下一页",
+    searchPlaceholderText: "搜索文档",
+    searchNoResultsText: "未搜索到相关结果",
+    searchSuggestedQueryText: "可更换不同的关键字后重试",
+    sourceCodeText: "源码",
   },
 
   markdown: {
