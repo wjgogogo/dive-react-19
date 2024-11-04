@@ -25,7 +25,7 @@ export default defineConfig({
       {
         icon: "wechat",
         mode: "img",
-        content: "/qrcode.jpg",
+        content: "/dive-react-19/qrcode.png",
       },
     ],
     nav: [
