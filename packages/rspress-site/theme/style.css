@@ -1,4 +1,10 @@
-[class^="social-links-icon"] > div {
-  height: 200px;
-  width: 200px;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+  [class^="social-links-icon"] > div {
+    height: 200px;
+    width: 200px;
+  }
 }

@@ -1,26 +1,10 @@
-#react
-
-
-直接使用 19-rc 版本
-```bash
-gcl https://github.com/facebook/react.git src/react 
-```
-
-
-## Debug
-
-- Standardalone 直接启动
-- build source map -> 光
-- Kasong
-- Vite (create-react-app -> eject -> 修改配置)
-- Principal -> ignore dev validate
-
 
 ## Catalogue
 - 准则
+  - Principal -> ignore dev validate
 - 架构预览
-- How to debug & use repo?
-- What's jsx? -> babel playground
+- [x] How to debug & use repo?
+- [x] What's jsx? -> babel playground
 - Open source
   - check and warning
 - Workflow
