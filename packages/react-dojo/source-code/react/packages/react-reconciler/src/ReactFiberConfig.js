@@ -17,4 +17,6 @@
 // sure that if we *do* accidentally break the configuration,
 // the failure isn't silent.
 
-throw new Error('This module must be shimmed by a specific renderer.');
+// throw new Error('This module must be shimmed by a specific renderer.');
+
+export * from "./forks/ReactFiberConfig.dom";

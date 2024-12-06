@@ -29,6 +29,9 @@ export type SchedulerCallback = (isSync: boolean) => SchedulerCallback | null;
 
 // this doesn't actually exist on the scheduler, but it *does*
 // on scheduler/unstable_mock, which we'll need for internal testing
-export const log = Scheduler.log;
-export const unstable_setDisableYieldValue =
-  Scheduler.unstable_setDisableYieldValue;
+// export const log = Scheduler.log;
+// export const unstable_setDisableYieldValue =
+//   Scheduler.unstable_setDisableYieldValue;
+
+export const log = () => {};
+export const unstable_setDisableYieldValue = () => {};

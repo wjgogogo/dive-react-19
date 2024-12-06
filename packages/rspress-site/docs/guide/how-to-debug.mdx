@@ -29,9 +29,7 @@ pnpm react:dev
 ![](/debug-vscode.png)
 
 :::tip
-
-本仓库使用的是 React 19 开发版本，对应的 commit 为 [feat: expose installHook with settings argument from react-devtools-core/backend](https://github.com/facebook/react/commit/a86afe8e560f452a9df5ceb4893d9423e5840800)。
-
+本仓库使用的是 React `v19.0.0` 版本，对应的 tag 为 [v19.0.0](https://github.com/facebook/react/tree/v19.0.0)。
 :::
 
 ## 使用 Webpack 调试 React 源码
@@ -45,7 +43,7 @@ pnpm react:dev
 在 `react-debug` 项目根目录下，执行命令获取 React 最新版代码：
 
 ```bash
-git clone https://github.com/facebook/react.git --depth=1
+git clone https://github.com/facebook/react.git --branch v19.0.0 --depth 1
 ```
 
 ### webpack 配置
@@ -106,11 +104,11 @@ module.exports = {
       "react-dom": path.resolve(__dirname, "./react/packages/react-dom"),
       "react-dom-bindings": path.resolve(
         __dirname,
-        "./react/packages/react-dom-bindings"
+        "./react/packages/react-dom-bindings",
       ),
       "react-reconciler": path.resolve(
         __dirname,
-        "./react/packages/react-reconciler"
+        "./react/packages/react-reconciler",
       ),
       scheduler: path.resolve(__dirname, "./react/packages/scheduler"),
       shared: path.resolve(__dirname, "./react/packages/shared"),
