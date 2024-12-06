@@ -33,7 +33,7 @@ esbuild.build({
   entryPoints: ["app.jsx"],
   bundle: true,
   outfile: "out.js",
-  jsx: "transform",
+  jsx: "transform"
 });
 ```
 
@@ -63,7 +63,7 @@ esbuild.build({
 
 :::info
 
-以 [@babel/preset-react](https://babeljs.io/docs/babel-preset-react) 7.25.7 版本为准，主要包含以下两个插件：
+以 [@babel/preset-react](https://babeljs.io/docs/babel-preset-react) `v7.26.3` 版本为准，主要包含以下两个插件：
 
 - [@babel/plugin-transform-react-jsx](https://babeljs.io/docs/babel-plugin-transform-react-jsx)：生产环境所使用的编译插件
 - [@babel/plugin-transform-react-jsx-development](https://babeljs.io/docs/babel-plugin-transform-react-jsx-development)：开发模式所使用的编译插件，提供更多开发所需要的源码信息
@@ -103,19 +103,19 @@ function App() {
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 function Child() {
   return /*#__PURE__*/ _jsx("div", {
-    children: "Child",
+    children: "Child"
   });
 }
 function App() {
   const element = /*#__PURE__*/ _jsx("h1", {
     style: {
-      color: "red",
+      color: "red"
     },
-    children: "Hello, world!",
+    children: "Hello, world!"
   });
   console.log("🚀 ~ element:", element);
   return /*#__PURE__*/ _jsxs("div", {
-    children: [element, " ", /*#__PURE__*/ _jsx(Child, {})],
+    children: [element, " ", /*#__PURE__*/ _jsx(Child, {})]
   });
 }
 ```
@@ -138,8 +138,8 @@ function App() {
     "h1",
     {
       style: {
-        color: "red",
-      },
+        color: "red"
+      }
     },
     "Hello, world!"
   );
@@ -179,14 +179,14 @@ function Child() {
   return /*#__PURE__*/ _jsxDEV(
     "div",
     {
-      children: "Child",
+      children: "Child"
     },
     void 0,
     false,
     {
       fileName: _jsxFileName,
       lineNumber: 2,
-      columnNumber: 10,
+      columnNumber: 10
     },
     this
   );
@@ -196,16 +196,16 @@ function App() {
     "h1",
     {
       style: {
-        color: "red",
+        color: "red"
       },
-      children: "Hello, world!",
+      children: "Hello, world!"
     },
     void 0,
     false,
     {
       fileName: _jsxFileName,
       lineNumber: 5,
-      columnNumber: 19,
+      columnNumber: 19
     },
     this
   );
@@ -224,18 +224,18 @@ function App() {
           {
             fileName: _jsxFileName,
             lineNumber: 9,
-            columnNumber: 17,
+            columnNumber: 17
           },
           this
-        ),
-      ],
+        )
+      ]
     },
     void 0,
     true,
     {
       fileName: _jsxFileName,
       lineNumber: 8,
-      columnNumber: 5,
+      columnNumber: 5
     },
     this
   );
@@ -275,7 +275,7 @@ function jsx(type, props, key) {
     $$typeof: ReactElementSymbol,
     type,
     key,
-    props,
+    props
   };
 }
 ```
@@ -309,16 +309,16 @@ const element = /*#__PURE__*/ _jsxDEV(
   "h1",
   {
     style: {
-      color: "red",
+      color: "red"
     },
-    children: "title ",
+    children: "title "
   },
   "key",
   false,
   {
     fileName: _jsxFileName,
     lineNumber: 14,
-    columnNumber: 15,
+    columnNumber: 15
   },
   this
 );
@@ -372,7 +372,7 @@ function App() {
 ```js
 import {
   jsxDEV as _jsxDEV,
-  Fragment as _Fragment,
+  Fragment as _Fragment
 } from "react/jsx-dev-runtime";
 function App() {
   const element1 = /*#__PURE__*/ _jsxDEV(
@@ -423,14 +423,14 @@ const element = /*#__PURE__*/ _jsxDEV(
   {
     ref: ref,
     other: other,
-    children: "title",
+    children: "title"
   },
   "key", // key 会被单独提出来，便于提高后续 React 解析性能
   false,
   {
     fileName: _jsxFileName,
     lineNumber: 5,
-    columnNumber: 15,
+    columnNumber: 15
   },
   this
 );
@@ -457,14 +457,14 @@ const element = /*#__PURE__*/ _jsxDEV(
   "h1",
   {
     ...props,
-    children: "title",
+    children: "title"
   },
   "key",
   false,
   {
     fileName: _jsxFileName,
     lineNumber: 5,
-    columnNumber: 15,
+    columnNumber: 15
   },
   this
 );
@@ -501,8 +501,8 @@ const element = /*#__PURE__*/ _createElement(
     __source: {
       fileName: _jsxFileName,
       lineNumber: 2,
-      columnNumber: 15,
-    },
+      columnNumber: 15
+    }
   },
   "title"
 );
@@ -560,7 +560,7 @@ const noChildren = /*#__PURE__*/ _jsxDEV(
 const oneChild = /*#__PURE__*/ _jsxDEV(
   "div",
   {
-    children: "Hi",
+    children: "Hi"
   },
   void 0,
   false
@@ -574,7 +574,7 @@ const multipleChildren = /*#__PURE__*/ _jsxDEV(
       /*#__PURE__*/ _jsxDEV(
         "span",
         {
-          children: "Hi",
+          children: "Hi"
         },
         void 0,
         false
@@ -583,13 +583,13 @@ const multipleChildren = /*#__PURE__*/ _jsxDEV(
       /*#__PURE__*/ _jsxDEV(
         "span",
         {
-          children: "Hi",
+          children: "Hi"
         },
         void 0,
         false
         /** ... */
-      ),
-    ],
+      )
+    ]
   },
   void 0,
   true
@@ -598,7 +598,7 @@ const multipleChildren = /*#__PURE__*/ _jsxDEV(
 const multipleChildren1 = /*#__PURE__*/ _jsxDEV(
   "div",
   {
-    children: [getChild(), someCondition ? getChild1() : getChild2()],
+    children: [getChild(), someCondition ? getChild1() : getChild2()]
   },
   void 0,
   true
@@ -611,13 +611,13 @@ const dynamicChildren = /*#__PURE__*/ _jsxDEV(
       /*#__PURE__*/ _jsxDEV(
         "span",
         {
-          children: item.name,
+          children: item.name
         },
         item.id,
         false
         /** ... */
       )
-    ),
+    )
   },
   void 0,
   false
@@ -694,22 +694,22 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 const noChildren = /*#__PURE__*/ _jsx("div", {});
 
 const oneChild = /*#__PURE__*/ _jsx("div", {
-  children: "Hi",
+  children: "Hi"
 });
 
 const multipleChildren = /*#__PURE__*/ _jsxs("div", {
   children: [
     /*#__PURE__*/ _jsx("span", {
-      children: "Hi",
+      children: "Hi"
     }),
     /*#__PURE__*/ _jsx("span", {
-      children: "Hi",
-    }),
-  ],
+      children: "Hi"
+    })
+  ]
 });
 
 const multipleChildren1 = /*#__PURE__*/ _jsxs("div", {
-  children: [getChild(), someCondition ? getChild1() : getChild2()],
+  children: [getChild(), someCondition ? getChild1() : getChild2()]
 });
 
 const dynamicChildren = /*#__PURE__*/ _jsx("div", {
@@ -717,11 +717,11 @@ const dynamicChildren = /*#__PURE__*/ _jsx("div", {
     /*#__PURE__*/ _jsx(
       "span",
       {
-        children: item.name,
+        children: item.name
       },
       item.id
     )
-  ),
+  )
 });
 ```
 
@@ -795,8 +795,8 @@ function Child() {
       __source: {
         fileName: _jsxFileName,
         lineNumber: 13,
-        columnNumber: 10,
-      },
+        columnNumber: 10
+      }
     },
     "Child"
   );
@@ -809,8 +809,8 @@ function App() {
       {
         key: "key",
         style: {
-          color: "red",
-        },
+          color: "red"
+        }
       },
       props,
       {
@@ -818,8 +818,8 @@ function App() {
         __source: {
           fileName: _jsxFileName,
           lineNumber: 17,
-          columnNumber: 5,
-        },
+          columnNumber: 5
+        }
       }
     ),
     "Hello, world!"
@@ -832,8 +832,8 @@ function App() {
       __source: {
         fileName: _jsxFileName,
         lineNumber: 23,
-        columnNumber: 5,
-      },
+        columnNumber: 5
+      }
     }),
     // 从第三个参数开始，后续的入参都会被视为是 children 的一项
     element,
@@ -843,8 +843,8 @@ function App() {
       __source: {
         fileName: _jsxFileName,
         lineNumber: 24,
-        columnNumber: 17,
-      },
+        columnNumber: 17
+      }
     })
   );
 }
@@ -881,8 +881,8 @@ function App() {
       {
         key: "key",
         style: {
-          color: "red",
-        },
+          color: "red"
+        }
       },
       props
     ),
@@ -891,7 +891,7 @@ function App() {
   return /*#__PURE__*/ React.createElement(
     "div",
     _extends({}, props, {
-      key: "key",
+      key: "key"
     }),
     // 从第三个参数开始，后续的入参都会被视为是 children 的一项
     element,
@@ -998,7 +998,6 @@ function jsxDEVImpl(
     }
 
     let key = null;
-    let ref = null;
 
     // 下面注释提到了对 <div {...props} key="Hi" or <div key="Hi" {...props} /> 两种情况的处理还有点问题
 
@@ -1022,28 +1021,8 @@ function jsxDEVImpl(
       key = "" + config.key;
     }
 
-    // 从 config 中获取 ref 值, 在 19 中，enableRefAsProp 和 disableStringRefs 都是 true
-    // 下面的逻辑不会进入，不用关心
-    if (hasValidRef(config)) {
-      if (!enableRefAsProp) {
-        ref = config.ref;
-        if (!disableStringRefs) {
-          ref = coerceStringRef(ref, getOwner(), type);
-        }
-      }
-      if (!disableStringRefs) {
-        warnIfStringRefCannotBeAutoConverted(config, self);
-      }
-    }
-
     let props;
-    // const enableFastJSXWithoutStringRefs = enableRefAsProp && disableStringRefs;
-    // 所以第一个条件肯定是满足的，只需要关心 `!("key" in config)` 的情况
-    if (
-      (enableFastJSXWithoutStringRefs ||
-        (enableRefAsProp && !("ref" in config))) &&
-      !("key" in config)
-    ) {
+    if (!("key" in config)) {
       // 性能优化措施，尽可能重用原始的 props 对象
 
       // If key was not spread in, we can reuse the original props object. This
@@ -1063,13 +1042,9 @@ function jsxDEVImpl(
       props = {};
       for (const propName in config) {
         // Skip over reserved prop names
-        if (propName !== "key" && (enableRefAsProp || propName !== "ref")) {
-          // ref 不会再作为保留属性，而是会保留在 props 中
-          if (enableRefAsProp && !disableStringRefs && propName === "ref") {
-            props.ref = coerceStringRef(config[propName], getOwner(), type);
-          } else {
-            props[propName] = config[propName];
-          }
+        // 不会对 ref 做特殊处理，所以 ref 不会再作为保留属性，而是会保留在 props 中
+        if (propName !== "key") {
+          props[propName] = config[propName];
         }
       }
     }
@@ -1088,11 +1063,19 @@ function jsxDEVImpl(
       }
     }
 
+    // 对从 props 中获取的 key 做特殊处理，添加开发环境警告
+    if (key) {
+      const displayName =
+        typeof type === "function"
+          ? type.displayName || type.name || "Unknown"
+          : type;
+      defineKeyPropWarningGetter(props, displayName);
+    }
+
     // 最后调用 ReactElement 函数创建 React 元素
     return ReactElement(
       type,
       key,
-      ref,
       self,
       source,
       getOwner(),
@@ -1104,23 +1087,10 @@ function jsxDEVImpl(
 }
 ```
 
-```js title="react/packages/shared/ReactFeatureFlags.js"
-// 19 中上面涉及到的几个特性开关都是 true
-
-// Passes `ref` as a normal prop instead of stripping it from the props object
-// during element creation.
-export const enableRefAsProp = true;
-export const disableStringRefs = true;
-
-// TODO: Land at Meta before removing.
-export const disableDefaultPropsExceptForClasses = true;
-```
-
 ```js title="react/packages/react/src/jsx/ReactJSXElement.js"
 function ReactElement(
   type,
   key,
-  _ref,
   self,
   source,
   owner,
@@ -1128,25 +1098,20 @@ function ReactElement(
   debugStack,
   debugTask
 ) {
-  let ref;
-  if (enableRefAsProp) {
-    // When enableRefAsProp is on, ignore whatever was passed as the ref
-    // argument and treat `props.ref` as the source of truth. The only thing we
-    // use this for is `element.ref`, which will log a deprecation warning on
-    // access. In the next release, we can remove `element.ref` as well as the
-    // `ref` argument.
-    const refProp = props.ref;
+  // When enableRefAsProp is on, ignore whatever was passed as the ref
+  // argument and treat `props.ref` as the source of truth. The only thing we
+  // use this for is `element.ref`, which will log a deprecation warning on
+  // access. In the next release, we can remove `element.ref` as well as the
+  // `ref` argument.
+  const refProp = props.ref;
 
-    // An undefined `element.ref` is coerced to `null` for
-    // backwards compatibility.
-    ref = refProp !== undefined ? refProp : null;
-  } else {
-    ref = _ref;
-  }
+  // An undefined `element.ref` is coerced to `null` for
+  // backwards compatibility.
+  const ref = refProp !== undefined ? refProp : null;
 
   // 分不同的情况构建 element，主要区别在于 ref 的处理
   let element;
-  if (__DEV__ && enableRefAsProp) {
+  if (__DEV__) {
     // In dev, make `ref` a non-enumerable property with a warning. It's non-
     // enumerable so that test matchers and serializers don't access it and
     // trigger the warning.
@@ -1163,12 +1128,13 @@ function ReactElement(
       props,
 
       // Record the component responsible for creating this element.
-      _owner: owner,
+      _owner: owner
     };
+    // 对 ref 做特殊处理，添加开发环境警告
     if (ref !== null) {
       Object.defineProperty(element, "ref", {
         enumerable: false,
-        get: elementRefGetterWithDeprecationWarning,
+        get: elementRefGetterWithDeprecationWarning
       });
     } else {
       // Don't warn on access if a ref is not given. This reduces false
@@ -1186,10 +1152,10 @@ function ReactElement(
       // for `element.ref`, too. Let's see if anyone complains.
       Object.defineProperty(element, "ref", {
         enumerable: false,
-        value: null,
+        value: null
       });
     }
-  } else if (!__DEV__ && disableStringRefs) {
+  } else {
     // In prod, `ref` is a regular property and _owner doesn't exist.
     element = {
       // This tag allows us to uniquely identify this as a React Element
@@ -1200,24 +1166,7 @@ function ReactElement(
       key,
       ref,
 
-      props,
-    };
-  } else {
-    // In prod, `ref` is a regular property. It will be removed in a
-    // future release.
-    element = {
-      // This tag allows us to uniquely identify this as a React Element
-      $$typeof: REACT_ELEMENT_TYPE,
-
-      // Built-in properties that belong on the element
-      type,
-      key,
-      ref,
-
-      props,
-
-      // Record the component responsible for creating this element.
-      _owner: owner,
+      props
     };
   }
 
@@ -1266,22 +1215,30 @@ export function createElement(type, config, children) {
   const props = {};
 
   let key = null;
-  let ref = null;
 
   // config 中包含除 children 的所有 props，包含 key，ref
   if (config != null) {
-    if (hasValidRef(config)) {
-      if (!enableRefAsProp) {
-        ref = config.ref;
-        if (!disableStringRefs) {
-          ref = coerceStringRef(ref, getOwner(), type);
-        }
-      }
-
-      if (__DEV__ && !disableStringRefs) {
-        warnIfStringRefCannotBeAutoConverted(config, config.__self);
+    if (__DEV__) {
+      // 对旧的 JSX 转换做警告
+      if (
+        !didWarnAboutOldJSXRuntime &&
+        "__self" in config &&
+        // Do not assume this is the result of an oudated JSX transform if key
+        // is present, because the modern JSX transform sometimes outputs
+        // createElement to preserve precedence between a static key and a
+        // spread key. To avoid false positive warnings, we never warn if
+        // there's a key.
+        !("key" in config)
+      ) {
+        didWarnAboutOldJSXRuntime = true;
+        console.warn(
+          "Your app (or one of its dependencies) is using an outdated JSX " +
+            "transform. Update to the modern JSX transform for " +
+            "faster performance: https://react.dev/link/new-jsx-transform"
+        );
       }
     }
+
     if (hasValidKey(config)) {
       if (__DEV__) {
         checkKeyStringCoercion(config.key);
@@ -1297,7 +1254,6 @@ export function createElement(type, config, children) {
         hasOwnProperty.call(config, propName) &&
         // Skip over reserved prop names
         propName !== "key" &&
-        (enableRefAsProp || propName !== "ref") &&
         // Even though we don't use these anymore in the runtime, we don't want
         // them to appear as props, so in createElement we filter them out.
         // We don't have to do this in the jsx() runtime because the jsx()
@@ -1305,11 +1261,7 @@ export function createElement(type, config, children) {
         propName !== "__self" &&
         propName !== "__source"
       ) {
-        if (enableRefAsProp && !disableStringRefs && propName === "ref") {
-          props.ref = coerceStringRef(config[propName], getOwner(), type);
-        } else {
-          props[propName] = config[propName];
-        }
+        props[propName] = config[propName];
       }
     }
   }
@@ -1345,11 +1297,19 @@ export function createElement(type, config, children) {
       }
     }
   }
+  if (__DEV__) {
+    if (key) {
+      const displayName =
+        typeof type === "function"
+          ? type.displayName || type.name || "Unknown"
+          : type;
+      defineKeyPropWarningGetter(props, displayName);
+    }
+  }
 
   return ReactElement(
     type,
     key,
-    ref,
     undefined,
     undefined,
     getOwner(),
@@ -1361,7 +1321,7 @@ export function createElement(type, config, children) {
 ```
 
 :::tip
-我们偶尔可能也会用到 [`React.cloneElement`](https://react.dev/reference/react/cloneElement) 函数，它主要用于克隆 ReactElement 元素，并进行一些扩展。核心代码流程和 `React.createElement` 函数大致一致，不再赘述。
+我们可能偶尔也会用到 [`React.cloneElement`](https://react.dev/reference/react/cloneElement) 函数，它主要用于克隆 ReactElement 元素，并进行一些扩展。核心代码流程和 `React.createElement` 函数大致一致，不再赘述。
 :::
 
 > 参考
