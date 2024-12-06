@@ -13,35 +13,35 @@ export default defineConfig({
   icon: "/rspress-icon.png",
   logo: {
     light: "/rspress-light-logo.png",
-    dark: "/rspress-dark-logo.png",
+    dark: "/rspress-dark-logo.png"
   },
   themeConfig: {
     socialLinks: [
       {
         icon: "github",
         mode: "link",
-        content: "https://github.com/wjgogogo/dive-react-19",
+        content: "https://github.com/wjgogogo/dive-react-19"
       },
       {
         icon: "wechat",
         mode: "img",
-        content: "/dive-react-19/qrcode.png",
-      },
+        content: "/dive-react-19/qrcode.png"
+      }
     ],
     nav: [
       {
         text: "源码解析",
         link: "/guide/",
-        activeMatch: "/guide/",
-      },
+        activeMatch: "/guide/"
+      }
     ],
     sidebar: {
       "/guide/": [
         { text: "如何调试 React 源码？", link: "/guide/how-to-debug" },
-        { text: "什么是 JSX ？", link: "/guide/what-is-jsx" },
-      ],
+        { text: "什么是 JSX ？", link: "/guide/what-is-jsx" }
+      ]
     },
-    enableAppearanceAnimation: true,
+    enableAppearanceAnimation: false,
     enableScrollToTop: true,
     lastUpdated: true,
     lastUpdatedText: "最后更新时间",
@@ -51,19 +51,19 @@ export default defineConfig({
     searchPlaceholderText: "搜索文档",
     searchNoResultsText: "未搜索到相关结果",
     searchSuggestedQueryText: "可更换不同的关键字后重试",
-    sourceCodeText: "源码",
+    sourceCodeText: "源码"
   },
 
   markdown: {
-    showLineNumbers: true,
+    showLineNumbers: true
   },
   plugins: [
     pluginShiki(),
     pluginPreview({
       defaultRenderMode: "pure",
       iframeOptions: {
-        position: "fixed",
-      },
-    }) /*  pluginPlayground() */,
-  ],
+        position: "fixed"
+      }
+    }) /*  pluginPlayground() */
+  ]
 });
