@@ -18,7 +18,6 @@ import {
   enableProfilerNestedUpdatePhase,
   enableSchedulingProfiler,
   enableScopeAPI,
-  disableStringRefs,
 } from 'shared/ReactFeatureFlags';
 import {
   ClassComponent,
@@ -773,7 +772,7 @@ function commitAttachRef(finishedWork: Fiber) {
       if (__DEV__) {
         // TODO: We should move these warnings to happen during the render
         // phase (markRef).
-        if (disableStringRefs && typeof ref === 'string') {
+        if (typeof ref === 'string') {
           console.error('String refs are no longer supported.');
         } else if (!ref.hasOwnProperty('current')) {
           console.error(
@@ -899,7 +898,7 @@ function safelyCallDestroy(
 function commitProfiler(
   finishedWork: Fiber,
   current: Fiber | null,
-  commitTime: number,
+  commitStartTime: number,
   effectDuration: number,
 ) {
   const {id, onCommit, onRender} = finishedWork.memoizedProps;
@@ -918,7 +917,7 @@ function commitProfiler(
       finishedWork.actualDuration,
       finishedWork.treeBaseDuration,
       finishedWork.actualStartTime,
-      commitTime,
+      commitStartTime,
     );
   }
 
@@ -928,7 +927,7 @@ function commitProfiler(
         finishedWork.memoizedProps.id,
         phase,
         effectDuration,
-        commitTime,
+        commitStartTime,
       );
     }
   }
@@ -937,7 +936,7 @@ function commitProfiler(
 export function commitProfilerUpdate(
   finishedWork: Fiber,
   current: Fiber | null,
-  commitTime: number,
+  commitStartTime: number,
   effectDuration: number,
 ) {
   if (enableProfilerTimer) {
@@ -948,11 +947,11 @@ export function commitProfilerUpdate(
           commitProfiler,
           finishedWork,
           current,
-          commitTime,
+          commitStartTime,
           effectDuration,
         );
       } else {
-        commitProfiler(finishedWork, current, commitTime, effectDuration);
+        commitProfiler(finishedWork, current, commitStartTime, effectDuration);
       }
     } catch (error) {
       captureCommitPhaseError(finishedWork, finishedWork.return, error);
@@ -963,7 +962,7 @@ export function commitProfilerUpdate(
 function commitProfilerPostCommitImpl(
   finishedWork: Fiber,
   current: Fiber | null,
-  commitTime: number,
+  commitStartTime: number,
   passiveEffectDuration: number,
 ): void {
   const {id, onPostCommit} = finishedWork.memoizedProps;
@@ -976,14 +975,14 @@ function commitProfilerPostCommitImpl(
   }
 
   if (typeof onPostCommit === 'function') {
-    onPostCommit(id, phase, passiveEffectDuration, commitTime);
+    onPostCommit(id, phase, passiveEffectDuration, commitStartTime);
   }
 }
 
 export function commitProfilerPostCommit(
   finishedWork: Fiber,
   current: Fiber | null,
-  commitTime: number,
+  commitStartTime: number,
   passiveEffectDuration: number,
 ) {
   try {
@@ -993,14 +992,14 @@ export function commitProfilerPostCommit(
         commitProfilerPostCommitImpl,
         finishedWork,
         current,
-        commitTime,
+        commitStartTime,
         passiveEffectDuration,
       );
     } else {
       commitProfilerPostCommitImpl(
         finishedWork,
         current,
-        commitTime,
+        commitStartTime,
         passiveEffectDuration,
       );
     }

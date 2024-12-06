@@ -99,3 +99,133 @@ export function logComponentEffect(
     performance.measure(name, reusableComponentOptions);
   }
 }
+
+export function logBlockingStart(
+  updateTime: number,
+  eventTime: number,
+  eventType: null | string,
+  renderStartTime: number,
+): void {
+  if (supportsUserTiming) {
+    reusableComponentDevToolDetails.track = 'Blocking';
+    if (eventTime > 0 && eventType !== null) {
+      // Log the time from the event timeStamp until we called setState.
+      reusableComponentDevToolDetails.color = 'secondary-dark';
+      reusableComponentOptions.start = eventTime;
+      reusableComponentOptions.end =
+        updateTime > 0 ? updateTime : renderStartTime;
+      performance.measure(eventType, reusableComponentOptions);
+    }
+    if (updateTime > 0) {
+      // Log the time from when we called setState until we started rendering.
+      reusableComponentDevToolDetails.color = 'primary-light';
+      reusableComponentOptions.start = updateTime;
+      reusableComponentOptions.end = renderStartTime;
+      performance.measure('Blocked', reusableComponentOptions);
+    }
+  }
+}
+
+export function logTransitionStart(
+  startTime: number,
+  updateTime: number,
+  eventTime: number,
+  eventType: null | string,
+  renderStartTime: number,
+): void {
+  if (supportsUserTiming) {
+    reusableComponentDevToolDetails.track = 'Transition';
+    if (eventTime > 0 && eventType !== null) {
+      // Log the time from the event timeStamp until we started a transition.
+      reusableComponentDevToolDetails.color = 'secondary-dark';
+      reusableComponentOptions.start = eventTime;
+      reusableComponentOptions.end =
+        startTime > 0
+          ? startTime
+          : updateTime > 0
+            ? updateTime
+            : renderStartTime;
+      performance.measure(eventType, reusableComponentOptions);
+    }
+    if (startTime > 0) {
+      // Log the time from when we started an async transition until we called setState or started rendering.
+      reusableComponentDevToolDetails.color = 'primary-dark';
+      reusableComponentOptions.start = startTime;
+      reusableComponentOptions.end =
+        updateTime > 0 ? updateTime : renderStartTime;
+      performance.measure('Action', reusableComponentOptions);
+    }
+    if (updateTime > 0) {
+      // Log the time from when we called setState until we started rendering.
+      reusableComponentDevToolDetails.color = 'primary-light';
+      reusableComponentOptions.start = updateTime;
+      reusableComponentOptions.end = renderStartTime;
+      performance.measure('Blocked', reusableComponentOptions);
+    }
+  }
+}
+
+export function logRenderPhase(startTime: number, endTime: number): void {
+  if (supportsUserTiming) {
+    reusableComponentDevToolDetails.color = 'primary-dark';
+    reusableComponentOptions.start = startTime;
+    reusableComponentOptions.end = endTime;
+    performance.measure('Render', reusableComponentOptions);
+  }
+}
+
+export function logSuspenseThrottlePhase(
+  startTime: number,
+  endTime: number,
+): void {
+  // This was inside a throttled Suspense boundary commit.
+  if (supportsUserTiming) {
+    reusableComponentDevToolDetails.color = 'secondary-light';
+    reusableComponentOptions.start = startTime;
+    reusableComponentOptions.end = endTime;
+    performance.measure('Throttled', reusableComponentOptions);
+  }
+}
+
+export function logSuspendedCommitPhase(
+  startTime: number,
+  endTime: number,
+): void {
+  // This means the commit was suspended on CSS or images.
+  if (supportsUserTiming) {
+    reusableComponentDevToolDetails.color = 'secondary-light';
+    reusableComponentOptions.start = startTime;
+    reusableComponentOptions.end = endTime;
+    performance.measure('Suspended', reusableComponentOptions);
+  }
+}
+
+export function logCommitPhase(startTime: number, endTime: number): void {
+  if (supportsUserTiming) {
+    reusableComponentDevToolDetails.color = 'secondary-dark';
+    reusableComponentOptions.start = startTime;
+    reusableComponentOptions.end = endTime;
+    performance.measure('Commit', reusableComponentOptions);
+  }
+}
+
+export function logPaintYieldPhase(startTime: number, endTime: number): void {
+  if (supportsUserTiming) {
+    reusableComponentDevToolDetails.color = 'secondary-light';
+    reusableComponentOptions.start = startTime;
+    reusableComponentOptions.end = endTime;
+    performance.measure('Waiting for Paint', reusableComponentOptions);
+  }
+}
+
+export function logPassiveCommitPhase(
+  startTime: number,
+  endTime: number,
+): void {
+  if (supportsUserTiming) {
+    reusableComponentDevToolDetails.color = 'secondary-dark';
+    reusableComponentOptions.start = startTime;
+    reusableComponentOptions.end = endTime;
+    performance.measure('Remaining Effects', reusableComponentOptions);
+  }
+}
