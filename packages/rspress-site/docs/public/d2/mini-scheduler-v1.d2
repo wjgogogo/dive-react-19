@@ -1,0 +1,24 @@
+direction: right
+
+taskQueue: {
+  grid-columns: 3
+  task1
+  task2
+  task3
+}
+
+schedule -> taskQueue
+
+perform: {
+  hasTask: 还存在任务 {
+    shape: diamond
+  }
+
+  peek: peek\n取出优先级最高的任务
+
+  hasTask -> peek: yes
+  peek -> execute -> hasTask
+}
+
+taskQueue -> perform.hasTask
+perform.hasTask -> end: no
