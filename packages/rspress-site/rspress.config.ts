@@ -15,6 +15,9 @@ export default defineConfig({
     light: "/rspress-light-logo.png",
     dark: "/rspress-dark-logo.png"
   },
+  mediumZoom: {
+    selector: ".rspress-doc img"
+  },
   themeConfig: {
     socialLinks: [
       {
@@ -38,7 +41,8 @@ export default defineConfig({
     sidebar: {
       "/guide/": [
         { text: "如何调试 React 源码？", link: "/guide/how-to-debug" },
-        { text: "什么是 JSX ？", link: "/guide/what-is-jsx" }
+        { text: "什么是 JSX ？", link: "/guide/what-is-jsx" },
+        { text: "Scheduler 调度器", link: "/guide/scheduler" }
       ]
     },
     enableAppearanceAnimation: false,
@@ -64,6 +68,6 @@ export default defineConfig({
       iframeOptions: {
         position: "fixed"
       }
-    }) /*  pluginPlayground() */
+    })
   ]
 });

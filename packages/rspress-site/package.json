@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "rspress dev",
     "build": "rspress build",
-    "preview": "rspress preview"
+    "preview": "rspress preview",
+    "build:d2": "d2 --layout dagre --theme 1 --sketch"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -14,8 +15,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@rspress/plugin-playground": "^1.35.2",
-    "@rspress/plugin-preview": "^1.35.2",
+    "@rspress/plugin-preview": "^1.39.3",
     "@rspress/plugin-shiki": "^1.35.2",
     "@types/node": "^16.18.115",
     "prettier-plugin-tailwindcss": "^0.6.8",
