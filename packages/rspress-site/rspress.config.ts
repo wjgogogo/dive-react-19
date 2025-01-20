@@ -34,7 +34,7 @@ export default defineConfig({
     nav: [
       {
         text: "源码解析",
-        link: "/guide/",
+        link: "/guide/how-to-debug",
         activeMatch: "/guide/"
       }
     ],
