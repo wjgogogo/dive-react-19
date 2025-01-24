@@ -16,10 +16,10 @@ React 并没有将本身的任务优先级调度和 Scheduler 耦合在一起，
 
 流程示意图如下所示：
 
-![](/d2/mini-scheduler-v1.svg)
+![](/drawio/mini-scheduler-v1.svg)
 
 1. `schedule` 负责创建和 `push` 任务
-2. `push` 到 `TaskQueue` 中的任务按照优先级和 id 进行排序
+2. `push` 到 `taskQueue` 中的任务按照优先级和 id 进行排序
 3. loop 任务队列所有的任务，并依次执行
 
 关键代码如下：
@@ -37,10 +37,10 @@ function schedule(execute: () => void, priority: number) {
   };
   push(task);
   console.log("schedule task: ", task);
-  perform();
+  workLoop();
 }
 
-function perform() {
+function workLoop() {
   while (taskQueue.length) {
     const task = peek();
     console.log("perform task: ", task);
@@ -80,10 +80,10 @@ function schedule(execute: () => void, priority: number) {
   };
   push(task);
   console.log("schedule task: ", task);
-  perform();
+  workLoop();
 }
 
-function perform() {
+function workLoop() {
   while (taskQueue.length) {
     const task = peek();
     console.log("perform task: ", task);
@@ -183,11 +183,11 @@ export default () => {
 
 但这个版本有两个最大的问题：
 
-1. `schedule` 任务后，就立即开始了 loop 执行，现实中会延后执行
+1. `schedule` 任务后，就立即开始了 loop 执行（即使同时插入底优，高优任务，也会先执行底优任务），现实中会延后执行
 2. 单纯的按照 `priority` 排序，如果期间不断有高优任务插入，低优任务就会一直被阻塞，而被“饿死”
 
 针对这两点，v2 改进的流程示意图如下:
-![](/d2/mini-scheduler-v2.svg)
+![](/drawio/mini-scheduler-v2.svg)
 
 关键代码如下：
 
@@ -213,24 +213,24 @@ function schedule(execute: () => void, priority: number) {
   };
   push(task);
   console.log("schedule task: ", task);
-  schedulePerform();
+  scheduleWorkLoop();
 }
 
 // 标识 loop 是否在执行中
 let isLoopRunning = false;
 
-function schedulePerform() {
+function scheduleWorkLoop() {
   // 只有在 loop 没有启动时，才需要 schedule
   if (!isLoopRunning) {
     isLoopRunning = true;
     // 暂时用 setTimeout 做延迟处理
     setTimeout(() => {
-      perform();
+      workLoop();
     }, 0);
   }
 }
 
-function perform() {
+function workLoop() {
   while (taskQueue.length) {
     const task = peek();
     console.log("perform task: ", task);
@@ -278,24 +278,24 @@ function schedule(execute: () => void, priority: number) {
   };
   push(task);
   console.log("schedule task: ", task);
-  schedulePerform();
+  scheduleWorkLoop();
 }
 
 // 标识 loop 是否在执行中
 let isLoopRunning = false;
 
-function schedulePerform() {
+function scheduleWorkLoop() {
   // 只有在 loop 没有启动时，才需要 schedule
   if (!isLoopRunning) {
     isLoopRunning = true;
     // 暂时用 setTimeout 做延迟处理
     setTimeout(() => {
-      perform();
+      workLoop();
     }, 0);
   }
 }
 
-function perform() {
+function workLoop() {
   while (taskQueue.length) {
     const task = peek();
     console.log("perform task: ", task);
@@ -401,9 +401,9 @@ v2 版本核心链路相对更完善，但也只是达到了 Demo 演示的目�
 
 `Scheduler` 核心的流程示意图如下：
 
-![](/d2/scheduler.svg)
+![](/drawio/scheduler.svg)
 
-- 包含两个任务队列 `TaskQueue` 和 `TimerQueue`， 其中 `TaskQueue` 存储的是需要立即执行的任务，而 `TimerQueue` 存储的是延迟执行的任务，两个队列的优先级排序的功能是一致的
+- 包含两个任务队列 `taskQueue` 和 `timerQueue`， 其中 `taskQueue` 存储的是需要立即执行的任务，而 `timerQueue` 存储的是延迟执行的任务，两个队列的优先级排序的功能是一致的
 - 因为存在两个优先级队列，那么在调度时，也会存在两种不同的调度方式，`requestHostTimeout` 和 `requestHostCallback`，但最终入口还是 `requestHostCallback`
 - 在 loop 执行任务时，并不是 Demo 示例一般一直到任务清空，而是设置了一些中断条件，以便让出主线程，让浏览器可以及时响应交互
 
@@ -515,7 +515,7 @@ function unstable_scheduleCallback(
       }
       // Schedule a timeout.
       // 以最高优延迟任务的开始时间作为 delay 的依据，当到期后，该延迟任务也就变成立即执行任务
-      // 会被放到 TaskQueue 中，然后真正被执行
+      // 会被放到 taskQueue 中，然后真正被执行
       requestHostTimeout(handleTimeout, startTime - currentTime);
     }
   } else {
@@ -549,7 +549,7 @@ function unstable_scheduleCallback(
 1. 是一棵完全的二叉树，即：除最后一层外，其它层的节点都是满的，且最后一层靠左排列
 2. 每一个节点的值都小于其子树节点的每一项
 
-![](/d2/heap.svg)
+![](/drawio/heap.svg)
 
 并且下标满足如下规律：
 
@@ -710,7 +710,7 @@ function requestHostTimeout(
 
 function handleTimeout(currentTime: number) {
   isHostTimeoutScheduled = false;
-  // 将所有到期的延迟任务移动到 TaskQueue 中
+  // 将所有到期的延迟任务移动到 taskQueue 中
   advanceTimers(currentTime);
 
   if (!isHostCallbackScheduled) {
@@ -809,7 +809,7 @@ if (typeof localSetImmediate === "function") {
 
 调度完成后，就来到了真正的执行阶段。代码执行链路是 `performWorkUntilDeadline -> flushWork -> workLoop`。最关键最复杂的逻辑就在 `workLoop` 中。
 
-`workLoop` 和 Demo 示例类似，就是不断把 TaskQueue 中的任务取出来执行，只要增加了提前中断和继续调度的场景。
+`workLoop` 和 Demo 示例类似，就是不断把 taskQueue 中的任务取出来执行，只要增加了提前中断和继续调度的场景。
 
 ```js title="react/packages/scheduler/src/forks/Scheduler.js" {5,14,21,40,65,71,82}
 function workLoop(initialTime: number) {
@@ -1031,4 +1031,4 @@ function flushWork(initialTime: number) {
 }
 ```
 
-至此，就是 `Scheduler` 主链路 `Queue -> Schedule -> Execution` 的流程。
+至此，就是 `Scheduler` 主链路的流程。

@@ -72,7 +72,7 @@ module.exports = {
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify("development"),
       __DEV__: true,
-      __EXPERIMENTAL__: true,
+      __EXPERIMENTAL__: false,
       __PROFILE__: false,
     }),
   ],
