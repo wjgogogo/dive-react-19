@@ -8,8 +8,9 @@ export default defineConfig({
   base: "/dive-react-19/",
   root: path.join(__dirname, "docs"),
   globalStyles: path.join(__dirname, "theme/style.css"),
-  title: "Rspress",
-  description: "Rspack-based Static Site Generator",
+  title: "React 19",
+
+  description: "React 19 深度源码解读",
   icon: "/rspress-icon.png",
   logo: {
     light: "/rspress-light-logo.png",
@@ -42,7 +43,8 @@ export default defineConfig({
       "/guide/": [
         { text: "如何调试 React 源码？", link: "/guide/how-to-debug" },
         { text: "什么是 JSX ？", link: "/guide/what-is-jsx" },
-        { text: "Scheduler 调度器", link: "/guide/scheduler" }
+        { text: "Scheduler 调度器", link: "/guide/scheduler" },
+        { text: "应用初次挂载概览", link: "/guide/initial-mount" }
       ]
     },
     enableAppearanceAnimation: false,

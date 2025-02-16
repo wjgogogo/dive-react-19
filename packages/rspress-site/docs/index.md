@@ -2,16 +2,15 @@
 pageType: home
 
 hero:
-  name: Rspress
-  text: Rspack-based Static Site Generator
-  tagline: Rspress tagline
+  name: React 19
+  text: 深度源码解读
   actions:
     - theme: brand
-      text: Quick Start
-      link: /guide/
+      text: 源码阅读
+      link: /guide/how-to-debug
     - theme: alt
       text: GitHub
-      link: https://github.com/web-infra-dev/rspress
+      link: https://github.com/wjgogogo/dive-react-19
   image:
     src: /rspress-icon.png
     alt: Rspress Logo
