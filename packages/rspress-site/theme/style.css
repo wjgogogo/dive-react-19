@@ -120,9 +120,11 @@
   body {
     @apply bg-background text-foreground;
   }
+}
 
-  [class^="social-links-icon"] > div {
-    height: 200px;
-    width: 200px;
+@layer utilities {
+  [class^="social-links-icon"] > div:nth-child(2) {
+    height: 200px !important;
+    width: 200px !important;
   }
 }
