@@ -68,8 +68,18 @@ export default defineConfig({
     pluginPreview({
       defaultRenderMode: "pure",
       iframeOptions: {
-        position: "fixed"
+        position: "fixed",
+        devPort: 8001
       }
     })
-  ]
+  ],
+  builderConfig: {
+    tools: {
+      source: {
+        define: {
+          "process.env.__IS_REACT_18__": "true"
+        }
+      }
+    }
+  }
 });

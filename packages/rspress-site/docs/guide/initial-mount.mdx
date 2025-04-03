@@ -1,1 +1,802 @@
 # 应用初次挂载概览
+
+在 React 19 中，应用的初次挂载是指将 React 组件树首次渲染到 DOM 中的过程。这是 React 应用生命周期的起点，也是理解 React 内部工作机制的基础。本文将深入分析 React 19 的初次挂载流程，揭示其内部实现细节。
+
+## React 19 渲染架构概述
+
+React 19 的渲染架构主要包含三个核心部分：
+
+1. **React Core**：负责定义组件 API 和处理元素转换
+2. **Reconciler（协调器）**：实现 Fiber 架构，负责调度和协调更新
+3. **Renderer（渲染器）**：负责将变更应用到不同平台（如 DOM、Native 等）
+
+初次挂载流程涉及这三个部分的紧密协作，形成一个从组件到实际 UI 的转化过程。
+
+## 初次挂载的关键阶段
+
+```jsx preview
+import { Component, useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+
+class Counter extends Component {
+  state = {
+    count: 1
+  };
+
+  onClick = () => {
+    this.setState({
+      count: this.state.count + 1
+    });
+  };
+
+  componentDidMount() {
+    console.log("componentDidMount");
+  }
+
+  componentDidUpdate() {
+    console.log("componentDidUpdate");
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    console.log(
+      "shouldComponentUpdate",
+      this.props,
+      nextProps,
+      this.state,
+      nextState
+    );
+    return true;
+  }
+
+  render() {
+    return (
+      <Card className="flex-1">
+        <CardHeader>
+          <CardTitle>计数器组件</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-lg font-medium">
+            当前计数: {this.state.count}
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" onClick={this.onClick}>
+            增加
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
+}
+
+function TextInput() {
+  const [input, setInput] = useState("");
+
+  const onChange = (e) => {
+    const value = e.target.value;
+    setInput(value);
+  };
+
+  useEffect(() => {
+    console.log("input has changed", input);
+  }, [input]);
+
+  return (
+    <Card className="flex-1">
+      <CardHeader>
+        <CardTitle>输入组件</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          <Input
+            value={input}
+            onChange={onChange}
+            placeholder="请输入文字..."
+          />
+          <div className="text-muted-foreground text-sm">
+            当前输入: {input || "无"}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function App() {
+  return (
+    <div className="flex flex-row space-x-4 p-4">
+      <TextInput />
+      <Counter />
+    </div>
+  );
+}
+
+export default App;
+```
+
+React 19 的初次挂载可以分为以下关键阶段：
+
+1. **创建 Root**：建立 React 应用与 DOM 容器的连接
+2. **渲染入口**：处理初次渲染请求
+3. **工作循环**：构建和处理 Fiber 树
+4. **完成阶段**：准备 DOM 操作
+5. **提交阶段**：执行 DOM 更新并触发副作用
+
+下面我们逐一深入分析这些阶段。
+
+## 创建 Root：应用的起点
+
+在 React 19 中，应用挂载始于创建 Root 容器，通常使用 `createRoot` API：
+
+```jsx
+import { createRoot } from "react-dom/client";
+
+const container = document.getElementById("root");
+const root = createRoot(container);
+root.render(<App />);
+```
+
+`createRoot` 函数的内部实现如下：
+
+```js
+export function createRoot(
+  container: Element | Document | DocumentFragment,
+  options?: CreateRootOptions,
+): RootType {
+  // 验证容器是否有效
+  if (!isValidContainer(container)) {
+    throw new Error('Target container is not a DOM element.');
+  }
+
+  // 创建 Fiber 根节点
+  const root = createContainer(
+    container,
+    ConcurrentRoot,
+    null,
+    isStrictMode,
+    concurrentUpdatesByDefaultOverride,
+    identifierPrefix,
+    onUncaughtError,
+    onCaughtError,
+    onRecoverableError,
+    transitionCallbacks,
+  );
+
+  // 标记容器为 root
+  markContainerAsRoot(root.current, container);
+
+  // 注册事件系统
+  const rootContainerElement =
+    container.nodeType === COMMENT_NODE
+      ? (container.parentNode: any)
+      : container;
+  listenToAllSupportedEvents(rootContainerElement);
+
+  return new ReactDOMRoot(root);
+}
+```
+
+这个过程主要完成了：
+
+1. **创建 FiberRoot 和 RootFiber**：`createContainer` 函数创建了 FiberRoot（管理整个应用状态的对象）和 RootFiber（Fiber 树的根节点）
+2. **关联 DOM 容器**：通过 `markContainerAsRoot` 将 DOM 容器与 FiberRoot 关联
+3. **初始化事件系统**：设置事件委托，为整个应用注册事件处理器
+
+`FiberRoot` 对象是 React 应用的核心数据结构，包含以下重要属性：
+
+```js
+function FiberRootNode(
+  containerInfo,
+  tag,
+  hydrate,
+  identifierPrefix,
+  onUncaughtError,
+  onCaughtError,
+  onRecoverableError,
+  formState
+) {
+  this.tag = tag;
+  this.containerInfo = containerInfo;
+  this.pendingChildren = null;
+  this.current = null; // 指向当前的 RootFiber
+  this.finishedWork = null; // 完成工作的 Fiber 树
+  this.context = null;
+  this.pendingContext = null;
+  this.callbackNode = null;
+  this.callbackPriority = NoLane;
+  this.eventTimes = createLaneMap(NoLanes);
+  this.expirationTimes = createLaneMap(NoTimestamp);
+
+  this.pendingLanes = NoLanes;
+  this.suspendedLanes = NoLanes;
+  this.pingedLanes = NoLanes;
+  this.expiredLanes = NoLanes;
+  this.finishedLanes = NoLanes;
+  // ...其他属性
+}
+```
+
+`RootFiber` 是第一个 Fiber 节点，代表应用的顶层：
+
+```js
+const uninitializedFiber = createHostRootFiber(tag, isStrictMode);
+root.current = uninitializedFiber;
+uninitializedFiber.stateNode = root;
+```
+
+这里建立了 FiberRoot 和 RootFiber 之间的相互引用，形成了 React 应用的基础结构。
+
+## 渲染入口：处理初次渲染请求
+
+在创建 Root 后，调用 `root.render(<App />)` 启动渲染流程：
+
+```js
+ReactDOMRoot.prototype.render = function(children: ReactNodeList): void {
+  const root = this._internalRoot;
+  if (root === null) {
+    throw new Error('Cannot update an unmounted root.');
+  }
+
+  updateContainer(children, root, null, null);
+};
+```
+
+`updateContainer` 函数是连接 React DOM 和 Reconciler 的桥梁：
+
+```js
+export function updateContainer(
+  element: ReactNodeList,
+  container: OpaqueRoot,
+  parentComponent: ?React$Component<any, any>,
+  callback: ?Function,
+): Lane {
+  const current = container.current;
+  const lane = requestUpdateLane(current);
+
+  updateContainerImpl(
+    current,
+    lane,
+    element,
+    container,
+    parentComponent,
+    callback,
+  );
+
+  return lane;
+}
+```
+
+其中，`requestUpdateLane` 函数为更新分配优先级（Lane），这是 React 19 并发模式的核心特性。
+
+`updateContainerImpl` 函数创建更新对象并加入更新队列：
+
+```js
+function updateContainerImpl(
+  rootFiber: Fiber,
+  lane: Lane,
+  element: ReactNodeList,
+  container: OpaqueRoot,
+  parentComponent: ?React$Component<any, any>,
+  callback: ?Function,
+): void {
+  // 获取上下文
+  const context = getContextForSubtree(parentComponent);
+  if (container.context === null) {
+    container.context = context;
+  } else {
+    container.pendingContext = context;
+  }
+
+  // 创建更新对象
+  const update = createUpdate(lane);
+  update.payload = {element}; // 元素是 <App />
+
+  if (callback !== null) {
+    update.callback = callback;
+  }
+
+  // 将更新入队并调度渲染
+  const root = enqueueUpdate(rootFiber, update, lane);
+  if (root !== null) {
+    scheduleUpdateOnFiber(root, rootFiber, lane);
+  }
+}
+```
+
+`scheduleUpdateOnFiber` 函数是启动 React 工作循环的入口，它会根据优先级调度更新：
+
+```js
+export function scheduleUpdateOnFiber(
+  root: FiberRoot,
+  fiber: Fiber,
+  lane: Lane,
+): FiberRoot | null {
+  // 标记 Root 上需要处理的 Lane
+  markRootUpdated(root, lane);
+
+  // 确保 Root 已被调度
+  ensureRootIsScheduled(root);
+
+  return root;
+}
+```
+
+`ensureRootIsScheduled` 函数确保调度器会处理这个更新：
+
+```js
+function ensureRootIsScheduled(root: FiberRoot): void {
+  // 获取最高优先级的 Lane
+  const nextLanes = getNextLanes(
+    root,
+    root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
+  );
+
+  // 如果没有任务，直接返回
+  if (nextLanes === NoLanes) {
+    return;
+  }
+
+  // 根据优先级决定使用哪种调度方式
+  if (includesSyncLane(nextLanes)) {
+    // 同步优先级，使用同步调度
+    performSyncWorkOnRoot(root);
+  } else {
+    // 使用异步调度
+    scheduleCallback(
+      schedulerPriorityLevel,
+      () => {
+        performConcurrentWorkOnRoot(root);
+        return null;
+      },
+    );
+  }
+}
+```
+
+对于初次渲染，React 19 通常会使用 `performSyncWorkOnRoot` 进行同步处理，确保应用能快速完成初始化渲染。
+
+## 工作循环：构建 Fiber 树
+
+初次挂载的核心是构建 Fiber 树，这在 `performSyncWorkOnRoot` 和 `performConcurrentWorkOnRoot` 函数中进行：
+
+```js
+function performSyncWorkOnRoot(root: FiberRoot): void {
+  // 构建 Fiber 树
+  const exitStatus = renderRootSync(root, lanes);
+
+  // 如果渲染成功，进入提交阶段
+  if (exitStatus !== RootInProgress) {
+    const finishedWork = root.current.alternate;
+    root.finishedWork = finishedWork;
+    commitRoot(root);
+  }
+}
+```
+
+`renderRootSync` 函数启动同步渲染过程：
+
+```js
+function renderRootSync(root: FiberRoot, lanes: Lanes): RootExitStatus {
+  // 准备工作进度根节点
+  prepareFreshStack(root, lanes);
+
+  // 执行工作循环
+  workLoopSync();
+
+  // 返回退出状态
+  return workInProgressRootExitStatus;
+}
+```
+
+`workLoopSync` 是同步工作循环的核心：
+
+```js
+function workLoopSync() {
+  // 不断处理下一个工作单元直到没有更多工作
+  while (workInProgress !== null) {
+    performUnitOfWork(workInProgress);
+  }
+}
+```
+
+`performUnitOfWork` 函数处理单个 Fiber 节点：
+
+```js
+function performUnitOfWork(unitOfWork: Fiber): void {
+  // 当前处理的 Fiber 节点
+  const current = unitOfWork.alternate;
+
+  // 开始处理，返回下一个要处理的子节点
+  const next = beginWork(current, unitOfWork, renderLanes);
+
+  // 完成当前节点的处理
+  if (next === null) {
+    // 如果没有子节点，完成当前工作单元
+    completeUnitOfWork(unitOfWork);
+  } else {
+    // 继续处理子节点
+    workInProgress = next;
+  }
+}
+```
+
+工作循环的核心是 `beginWork` 和 `completeUnitOfWork` 两个函数，它们共同实现了深度优先遍历：
+
+1. `beginWork`：处理当前 Fiber 节点，返回子节点（如果有）
+2. `completeUnitOfWork`：在没有更多子节点时完成节点的处理，然后处理兄弟节点或返回父节点
+
+对于不同类型的组件，`beginWork` 会调用不同的处理函数：
+
+- 对于 Function Component：调用 `updateFunctionComponent`
+- 对于 Class Component：调用 `updateClassComponent`
+- 对于 Host Component（如 div）：调用 `updateHostComponent`
+- 对于 Root：调用 `updateHostRoot`
+
+在初次挂载时，对于 RootFiber，`updateHostRoot` 函数是关键：
+
+```js
+function updateHostRoot(
+  current: null | Fiber,
+  workInProgress: Fiber,
+  renderLanes: Lanes,
+) {
+  pushHostRootContext(workInProgress);
+
+  // 处理更新队列
+  const updateQueue = workInProgress.updateQueue;
+  const nextProps = workInProgress.pendingProps;
+  const prevState = workInProgress.memoizedState;
+  const prevChildren = prevState !== null ? prevState.element : null;
+  processUpdateQueue(workInProgress, updateQueue, nextProps, null, renderLanes);
+
+  // 获取新的子元素（App 组件）
+  const nextState = workInProgress.memoizedState;
+  const nextChildren = nextState.element;
+
+  // 初次挂载时，reconcileChildren 创建子 Fiber 节点
+  reconcileChildren(current, workInProgress, nextChildren, renderLanes);
+
+  return workInProgress.child;
+}
+```
+
+`reconcileChildren` 函数是 React 协调算法的入口，它负责为子元素创建 Fiber 节点：
+
+```js
+function reconcileChildren(
+  current: Fiber | null,
+  workInProgress: Fiber,
+  nextChildren: any,
+  renderLanes: Lanes
+) {
+  if (current === null) {
+    // 初次挂载
+    workInProgress.child = mountChildFibers(
+      workInProgress,
+      null,
+      nextChildren,
+      renderLanes
+    );
+  } else {
+    // 更新过程
+    workInProgress.child = reconcileChildFibers(
+      workInProgress,
+      current.child,
+      nextChildren,
+      renderLanes
+    );
+  }
+}
+```
+
+在初次挂载时，由于 `current` 为 null，React 使用 `mountChildFibers` 创建新的 Fiber 节点。
+
+这个深度优先的遍历过程会一直持续，直到处理完整个组件树，构建出完整的 Fiber 树结构。
+
+## 完成阶段：准备 DOM 操作
+
+当 Fiber 节点没有子节点时，会进入 `completeUnitOfWork` 阶段：
+
+```js
+function completeUnitOfWork(unitOfWork: Fiber): void {
+  let completedWork = unitOfWork;
+
+  do {
+    // 获取当前 Fiber 的替身
+    const current = completedWork.alternate;
+    const returnFiber = completedWork.return;
+
+    // 调用 completeWork 完成当前工作单元
+    completeWork(current, completedWork, renderLanes);
+
+    // 处理兄弟节点
+    const siblingFiber = completedWork.sibling;
+    if (siblingFiber !== null) {
+      // 如果有兄弟节点，继续处理兄弟节点
+      workInProgress = siblingFiber;
+      return;
+    }
+
+    // 如果没有兄弟节点，继续向上回溯父节点
+    completedWork = returnFiber;
+    workInProgress = completedWork;
+  } while (completedWork !== null);
+}
+```
+
+对于 DOM 元素，`completeWork` 函数负责创建实际的 DOM 节点：
+
+```js
+function completeWork(
+  current: Fiber | null,
+  workInProgress: Fiber,
+  renderLanes: Lanes,
+): Fiber | null {
+  const newProps = workInProgress.pendingProps;
+
+  switch (workInProgress.tag) {
+    case HostComponent: {
+      // 获取当前的渲染环境
+      const rootContainerInstance = getRootHostContainer();
+
+      // 创建 DOM 实例
+      const instance = createInstance(
+        type,
+        newProps,
+        rootContainerInstance,
+        currentHostContext,
+        workInProgress,
+      );
+
+      // 将子 DOM 节点附加到当前节点
+      appendAllChildren(instance, workInProgress, false, false);
+
+      // 存储 DOM 节点到 Fiber 的 stateNode 属性
+      workInProgress.stateNode = instance;
+
+      // 初始化 DOM 属性
+      if (finalizeInitialChildren(
+        instance,
+        type,
+        newProps,
+        currentHostContext,
+      )) {
+        // 如果需要进行后续初始化（如 autoFocus），标记更新
+        markUpdate(workInProgress);
+      }
+    }
+  }
+
+  // 向上冒泡属性
+  bubbleProperties(workInProgress);
+
+  return null;
+}
+```
+
+在这个阶段，React 完成了：
+
+1. **创建 DOM 节点**：为每个 Host Component 创建对应的 DOM 元素
+2. **设置初始属性**：设置元素的基础属性，如 className、style 等
+3. **构建 DOM 树结构**：将子 DOM 节点附加到父节点，但尚未插入文档
+
+需要注意的是，此时 DOM 节点还没有实际挂载到页面上，而是保存在内存中。
+
+## 提交阶段：应用 DOM 变更
+
+当整个 Fiber 树构建完成后，React 进入提交阶段，将变更应用到 DOM：
+
+```js
+function commitRoot(
+  root: FiberRoot,
+  recoverableErrors: null | Array<mixed>,
+  transitions: Array<Transition> | null,
+  spawnedLane: Lane,
+): void {
+  // 获取已完成的工作
+  const finishedWork = root.finishedWork;
+  const lanes = root.finishedLanes;
+
+  // 清除引用
+  root.finishedWork = null;
+  root.finishedLanes = NoLanes;
+
+  // 提交阶段分为三个子阶段
+
+  // 1. Before Mutation 阶段
+  commitBeforeMutationEffects(root, finishedWork);
+
+  // 2. Mutation 阶段 - 应用 DOM 变更
+  commitMutationEffects(root, finishedWork, lanes);
+
+  // 在 Mutation 阶段后切换 current 树
+  root.current = finishedWork;
+
+  // 3. Layout 阶段 - 执行 DOM 变更后的副作用
+  commitLayoutEffects(finishedWork, root, lanes);
+
+  // 处理剩余的副作用
+  requestPaint();
+  flushPassiveEffects();
+}
+```
+
+提交阶段分为三个子阶段：
+
+### 1. Before Mutation 阶段
+
+在 DOM 变更前执行的操作，主要包括：
+
+- 调用 `getSnapshotBeforeUpdate` 生命周期方法
+- 调度 useEffect 副作用
+
+### 2. Mutation 阶段
+
+这是实际应用 DOM 变更的阶段，主要通过 `commitMutationEffects` 函数实现：
+
+```js
+function commitMutationEffects(
+  root: FiberRoot,
+  finishedWork: Fiber,
+  lanes: Lanes,
+): void {
+  // 遍历 Fiber 树，执行 DOM 变更
+  commitMutationEffectsOnFiber(finishedWork, root, lanes);
+}
+```
+
+对于初次挂载，主要执行的操作是将构建好的 DOM 树插入到容器中：
+
+```js
+function commitPlacement(finishedWork: Fiber): void {
+  // 获取父级 DOM 节点
+  const parentFiber = getHostParentFiber(finishedWork);
+  const parentStateNode = parentFiber.stateNode;
+
+  // 将新创建的 DOM 节点插入到父节点
+  if (isContainer) {
+    insertOrAppendPlacementNodeIntoContainer(finishedWork, before, parent);
+  } else {
+    insertOrAppendPlacementNode(finishedWork, before, parent);
+  }
+}
+```
+
+### 3. Layout 阶段
+
+DOM 变更完成后执行的操作，主要包括：
+
+- 调用类组件的 `componentDidMount` 生命周期方法
+- 调用函数组件中的 `useLayoutEffect` 回调
+
+```js
+function commitLayoutEffects(
+  finishedWork: Fiber,
+  root: FiberRoot,
+  committedLanes: Lanes,
+): void {
+  // 遍历 Fiber 树，执行布局副作用
+  commitLayoutEffectOnFiber(
+    root,
+    finishedWork,
+    committedLanes,
+  );
+}
+```
+
+对于类组件，会调用 `componentDidMount`：
+
+```js
+export function commitClassDidMount(finishedWork: Fiber) {
+  const instance = finishedWork.stateNode;
+  if (typeof instance.componentDidMount === 'function') {
+    try {
+      instance.componentDidMount();
+    } catch (error) {
+      captureCommitPhaseError(finishedWork, finishedWork.return, error);
+    }
+  }
+}
+```
+
+## React 19 初次挂载的特性和优化
+
+React 19 在初次挂载流程中引入了一些关键特性和优化：
+
+### 1. 完全采用并发模式
+
+React 19 移除了 Legacy 模式，所有渲染都使用并发特性：
+
+```js
+export default defineConfig({
+  // ...
+  // React 19 默认使用 ConcurrentRoot 模式
+  root = createContainer(
+    container,
+    ConcurrentRoot,  // 不再支持 LegacyRoot
+    // ...
+  );
+});
+```
+
+### 2. Lane 模型的优化
+
+React 19 改进了优先级调度系统，使用更精细的 Lane 模型：
+
+```js
+// 分配优先级
+const lane = requestUpdateLane(current);
+
+// 根据优先级调度工作
+if (includesSyncLane(nextLanes)) {
+  // 同步处理高优先级工作
+  performSyncWorkOnRoot(root);
+} else {
+  // 异步处理低优先级工作
+  scheduleCallback(schedulerPriorityLevel, () =>
+    performConcurrentWorkOnRoot(root)
+  );
+}
+```
+
+### 3. 改进的错误处理
+
+React 19 提供了更详细的错误捕获机制：
+
+```js
+const root = createContainer(
+  container,
+  ConcurrentRoot,
+  null,
+  isStrictMode,
+  concurrentUpdatesByDefaultOverride,
+  identifierPrefix,
+  onUncaughtError, // 未捕获错误的处理器
+  onCaughtError, // 已捕获错误的处理器
+  onRecoverableError, // 可恢复错误的处理器
+  transitionCallbacks
+);
+```
+
+### 4. 更好的服务器组件集成
+
+React 19 优化了与 React Server Components 的交互：
+
+```js
+// 支持流式 SSR 和 RSC
+function hydrateRoot(
+  container: Element | Document | DocumentFragment,
+  initialChildren: ReactNodeList,
+  options?: HydrateRootOptions,
+): RootType {
+  // ...
+}
+```
+
+## 总结：React 19 初次挂载流程
+
+React 19 的初次挂载是一个精心设计的过程，可以总结为以下步骤：
+
+1. **创建根容器**：`createRoot` 创建 FiberRoot 和 RootFiber
+2. **触发渲染**：`root.render` 创建更新并加入队列
+3. **调度工作**：`scheduleUpdateOnFiber` 根据优先级调度更新
+4. **构建 Fiber 树**：`workLoopSync` 通过深度优先遍历构建 Fiber 树
+5. **创建 DOM 节点**：`completeWork` 为每个 Host Component 创建 DOM 节点
+6. **应用 DOM 变更**：`commitRoot` 将变更应用到实际 DOM
+7. **执行副作用**：调用生命周期方法和 Effect 钩子

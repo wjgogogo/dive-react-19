@@ -1,8 +1,5 @@
 import { createRoot } from "react-dom/client";
 import { Component, useState, useEffect } from "react";
-import "./index.css";
-
-const root = createRoot(document.getElementById("root"));
 
 class Counter extends Component {
   state = {
@@ -70,5 +67,7 @@ function App() {
     </div>
   );
 }
+
+const root = createRoot(document.getElementById("root"));
 
 root.render(<App />);
