@@ -3,6 +3,7 @@ import { defineConfig } from "rspress/config";
 import { pluginShiki } from "@rspress/plugin-shiki";
 import { pluginPreview } from "@rspress/plugin-preview";
 import { pluginPlayground } from "@rspress/plugin-playground";
+import pluginMermaid from "rspress-plugin-mermaid";
 
 export default defineConfig({
   base: "/dive-react-19/",
@@ -71,7 +72,8 @@ export default defineConfig({
         position: "fixed",
         devPort: 8001
       }
-    })
+    }),
+    pluginMermaid()
   ],
   builderConfig: {
     tools: {

@@ -1,0 +1,57 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# React 19 深度源码解读项目概览
+
+## 项目简介
+这是一个专注于 React 19 源码深度解读的学习项目，采用 monorepo 架构，包含实践代码和文档站点两个主要部分。
+
+## 项目结构
+```
+dive-react-19/
+├── packages/
+│   ├── react-dojo/          # React 实践代码和示例
+│   └── rspress-site/        # 文档站点
+├── package.json             # 根目录配置
+├── pnpm-workspace.yaml      # pnpm 工作空间配置
+└── .cursor/rules/           # Cursor 规则目录
+```
+
+## 核心组件
+
+### React Dojo ([packages/react-dojo/](mdc:packages/react-dojo))
+- **目的**: 提供 React 源码学习的实践环境
+- **技术栈**: React, Webpack, Babel
+- **主要文件**: 
+  - [dojo/index.jsx](mdc:packages/react-dojo/dojo/index.jsx) - 主要示例代码
+  - [webpack.config.js](mdc:packages/react-dojo/webpack.config.js) - 构建配置
+
+### 文档站点 ([packages/rspress-site/](mdc:packages/rspress-site))
+- **目的**: 提供 React 19 源码解读的文档和教程
+- **技术栈**: RSPress, React 19, TailwindCSS
+- **主要目录**:
+  - [docs/](mdc:packages/rspress-site/docs) - 文档内容
+  - [components/](mdc:packages/rspress-site/components) - 自定义组件
+  - [theme/](mdc:packages/rspress-site/theme) - 主题配置
+
+## 学习路径
+根据 [README.md](mdc:packages/rspress-site/README.md) 的规划，项目涵盖以下核心主题：
+- 架构预览和调试方法
+- JSX 原理解析
+- 渲染流程 (Mount, Update, Reconciler)
+- Hooks 机制
+- 错误处理
+- 调度器 (Scheduler)
+- 并发特性 (Concurrent)
+- 合成事件 (Synthetic Event)
+- 测试工具
+- 开发者工具
+- 编译器
+- 生态系统
+
+## 开发命令
+- `pnpm react:dev` - 启动 React 实践环境
+- `pnpm docs:dev` - 启动文档开发服务器
+- `pnpm docs:build` - 构建文档站点

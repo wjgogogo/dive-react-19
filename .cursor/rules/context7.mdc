@@ -1,0 +1,46 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Context7 MCP 集成规范
+
+## 使用要求
+
+【必须】遵循：
+- 首次引入/升级/替换第三方库，必须通过 Context7 MCP 获取官方文档
+- 实现复杂功能、调试、重构、优化时，先查阅 Context7 文档
+
+## 流程
+
+【必须】按顺序执行：
+1. 先 `resolve-library-id` 获取库 ID
+2. 再 `get-library-docs` 获取详细文档
+3. 严格按文档实现
+
+## 示例
+
+```tsx
+// ✅ 正确流程
+// 步骤1: resolve-library-id("axios")
+// 步骤2: get-library-docs({ context7CompatibleLibraryID: "/axios/axios" })
+// 步骤3: 按文档实现
+import axios from 'axios';
+const api = axios.create({ baseURL: '/api' });
+```
+
+
+## 🔍 检查清单
+
+在每次使用第三方库（通过 Context7 MCP 获取文档）实现功能时，【必须】确认：
+
+- [ ] **[P0]** 文档获取：是否已通过 Context7 MCP (`resolve-library-id` 和 `get-library-docs`) 获取最新官方文档？
+- [ ] **[P0]** 版本匹配：项目中使用的库版本与查阅的文档版本是否一致？
+- [ ] **[P0]** 核心实现：是否严格按照获取的文档说明来实现核心功能和 API 调用？
+- [ ] **[P0]** 最佳实践：是否遵循了文档中推荐的配置、设计模式和最佳实践？
+- [ ] **[P0]** 类型安全：如果使用 TypeScript，是否采纳了文档提供的或兼容的类型定义？
+- [ ] **[P0]** 错误处理：是否实现了文档中建议的错误处理机制？
+- [ ] **[P0]** 性能考量：是否关注并采用了文档中提及的性能优化建议？
+- [ ] **[P0]** 可访问性（如适用）：如果库涉及 UI 或用户交互，是否遵循了其可访问性指南？
+
+**重要提醒**：Context7 MCP 提供的是实时更新的官方文档，确保您始终使用最新、最正确的实现方式。这是代码质量的重要保障，不可忽视！
