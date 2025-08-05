@@ -1,0 +1,539 @@
+# 源码目录结构
+
+## 概述
+
+React 19 源码采用 monorepo 架构，包含多个独立的包。理解源码的目录结构是深入学习的第一步，本章将详细介绍各个目录的作用和重要文件。
+
+## 顶层目录结构
+
+```
+react/
+├── packages/                 # 所有 React 包的源码
+├── fixtures/                 # 测试用例和演示项目
+├── scripts/                  # 构建和发布脚本
+├── compiler/                 # React Compiler (新)
+├── .github/                  # GitHub 配置
+├── dangerfile.js            # 代码审查自动化
+├── package.json             # 项目配置
+├── yarn.lock                # 依赖锁定文件
+└── README.md                # 项目说明
+```
+
+## packages 目录详解
+
+### 核心包结构
+
+```
+packages/
+├── react/                   # React 核心包
+├── react-dom/              # DOM 渲染器
+├── react-reconciler/       # 协调器（核心算法）
+├── scheduler/              # 任务调度器
+├── shared/                 # 共享工具和常量
+├── react-dom-bindings/     # DOM 绑定
+└── react-client/           # 客户端特定功能
+```
+
+### 扩展和工具包
+
+```
+packages/
+├── react-devtools-*/       # 开发者工具相关
+├── react-test-renderer/    # 测试渲染器
+├── react-server-dom-*/     # 服务端组件
+├── react-art/              # Canvas/SVG 渲染器
+├── react-native-renderer/  # React Native 渲染器
+├── use-*/                  # 独立的 Hook 包
+└── eslint-plugin-react-hooks/ # ESLint 插件
+```
+
+## 核心包目录详解
+
+### 1. react 包
+
+```
+packages/react/
+├── src/
+│   ├── React.js                    # 主要导出文件
+│   ├── ReactHooks.js               # Hook API 定义
+│   ├── ReactElement.js             # React 元素创建
+│   ├── ReactContext.js             # Context 实现
+│   ├── ReactLazy.js                # 懒加载组件
+│   ├── ReactMemo.js                # memo 高阶组件
+│   ├── ReactForwardRef.js          # forwardRef 实现
+│   ├── ReactStartTransition.js     # startTransition API
+│   ├── ReactCurrentDispatcher.js   # 当前 Hook dispatcher
+│   ├── ReactCurrentBatchConfig.js  # 批处理配置
+│   └── ReactSharedInternals.js     # 内部共享对象
+├── index.js                        # 包入口
+├── jsx-runtime.js                  # JSX 运行时
+├── jsx-dev-runtime.js              # JSX 开发运行时
+└── package.json                    # 包配置
+```
+
+#### 关键文件说明
+
+**React.js** - 主要导出文件
+```javascript
+// 导出所有公共 API
+export {
+  Children,
+  Component,
+  Fragment,
+  Profiler,
+  PureComponent,
+  StrictMode,
+  Suspense,
+  cloneElement,
+  createContext,
+  createElement,
+  createFactory,
+  createRef,
+  forwardRef,
+  isValidElement,
+  lazy,
+  memo,
+  startTransition,
+  unstable_act,
+  useCallback,
+  useContext,
+  useDebugValue,
+  useDeferredValue,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  version,
+} from './src/React';
+```
+
+**ReactHooks.js** - Hook 实现
+```javascript
+export function useState(initialState) {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useState(initialState);
+}
+
+export function useEffect(create, deps) {
+  const dispatcher = resolveDispatcher();
+  return dispatcher.useEffect(create, deps);
+}
+
+function resolveDispatcher() {
+  const dispatcher = ReactCurrentDispatcher.current;
+  return dispatcher;
+}
+```
+
+### 2. react-dom 包
+
+```
+packages/react-dom/
+├── src/
+│   ├── client/                     # 客户端渲染
+│   │   ├── ReactDOM.js             # 主要 API
+│   │   ├── ReactDOMRoot.js         # createRoot 实现
+│   │   └── ReactDOMComponent.js    # DOM 组件处理
+│   ├── server/                     # 服务端渲染
+│   │   ├── ReactDOMServer.js       # SSR API
+│   │   ├── ReactDOMServerNode.js   # Node.js 环境
+│   │   └── ReactDOMServerBrowser.js # 浏览器环境
+│   ├── events/                     # 事件系统
+│   │   ├── SyntheticEvent.js       # 合成事件
+│   │   ├── EventListener.js        # 事件监听
+│   │   └── plugins/                # 事件插件
+│   ├── shared/                     # DOM 特定共享代码
+│   │   ├── HTMLDOMPropertyConfig.js # HTML 属性配置
+│   │   ├── CSSPropertyOperations.js # CSS 操作
+│   │   └── DOMPropertyOperations.js # DOM 属性操作
+│   └── test-utils/                 # 测试工具
+│       └── ReactTestUtils.js       # 测试辅助函数
+├── index.js                        # 客户端入口
+├── server.js                       # 服务端入口
+├── test-utils.js                   # 测试工具入口
+└── package.json                    # 包配置
+```
+
+#### 关键文件说明
+
+**ReactDOMRoot.js** - 新的根 API
+```javascript
+export function createRoot(container, options) {
+  // 创建 Fiber 根节点
+  const root = createContainer(container, ConcurrentRoot, /* ... */);
+  
+  // 标记容器
+  markContainerAsRoot(root.current, container);
+  
+  // 监听所有支持的事件
+  listenToAllSupportedEvents(container);
+  
+  return new ReactDOMRoot(root);
+}
+
+class ReactDOMRoot {
+  constructor(internalRoot) {
+    this._internalRoot = internalRoot;
+  }
+  
+  render(children) {
+    updateContainer(children, this._internalRoot, null, null);
+  }
+}
+```
+
+### 3. react-reconciler 包
+
+```
+packages/react-reconciler/
+├── src/
+│   ├── ReactFiberWorkLoop.js           # 工作循环核心
+│   ├── ReactFiberBeginWork.js          # beginWork 阶段
+│   ├── ReactFiberCompleteWork.js       # completeWork 阶段
+│   ├── ReactFiberCommitWork.js         # commit 阶段
+│   ├── ReactFiberHooks.js              # Hook 实现
+│   ├── ReactFiberReconciler.js         # 协调器入口
+│   ├── ReactFiberLane.js               # Lane 优先级模型
+│   ├── ReactFiberRoot.js               # Fiber 根节点
+│   ├── ReactFiber.js                   # Fiber 节点
+│   ├── ReactChildFiber.js              # 子节点协调
+│   ├── ReactFiberContext.js            # Context 实现
+│   ├── ReactFiberSuspenseComponent.js  # Suspense 组件
+│   ├── ReactFiberThrow.js              # 错误处理
+│   ├── ReactFiberScheduler.js          # 调度相关
+│   ├── ReactCurrentFiber.js            # 当前 Fiber 状态
+│   ├── ReactFiberTreeReflection.js     # 树结构反射
+│   ├── ReactFiberFlags.js              # 副作用标记
+│   ├── ReactFiberHostConfig.js         # 宿主环境配置
+│   └── ReactFiberReconciler.js         # 协调器入口
+├── index.js                            # 包入口
+└── package.json                        # 包配置
+```
+
+#### 核心文件说明
+
+**ReactFiberWorkLoop.js** - 工作循环
+```javascript
+// 并发工作循环
+function workLoopConcurrent() {
+  while (workInProgress !== null && !shouldYield()) {
+    performUnitOfWork(workInProgress);
+  }
+}
+
+// 同步工作循环
+function workLoopSync() {
+  while (workInProgress !== null) {
+    performUnitOfWork(workInProgress);
+  }
+}
+
+function performUnitOfWork(unitOfWork) {
+  const current = unitOfWork.alternate;
+  const next = beginWork(current, unitOfWork, subtreeRenderLanes);
+  
+  if (next === null) {
+    completeUnitOfWork(unitOfWork);
+  } else {
+    workInProgress = next;
+  }
+}
+```
+
+**ReactFiberHooks.js** - Hook 真正的实现
+```javascript
+// Hook 状态存储
+let currentHook = null;
+let workInProgressHook = null;
+
+function useState(initialState) {
+  return useReducer(basicStateReducer, initialState);
+}
+
+function useReducer(reducer, initialArg, init) {
+  const hook = updateWorkInProgressHook();
+  const queue = hook.queue;
+  
+  if (queue !== null) {
+    // 有更新队列，处理更新
+    const dispatch = queue.dispatch;
+    if (dispatch !== null) {
+      const pendingQueue = queue.pending;
+      if (pendingQueue !== null) {
+        // 执行所有待处理的更新
+        const newState = updateReducer(hook, queue, reducer);
+        return [newState, dispatch];
+      }
+    }
+  }
+  
+  // 首次渲染
+  const initialState = init !== undefined ? init(initialArg) : initialArg;
+  hook.memoizedState = hook.baseState = initialState;
+  
+  const dispatch = dispatchReducerAction.bind(null, currentlyRenderingFiber, queue);
+  queue.dispatch = dispatch;
+  
+  return [hook.memoizedState, dispatch];
+}
+```
+
+### 4. scheduler 包
+
+```
+packages/scheduler/
+├── src/
+│   ├── Scheduler.js                    # 调度器主要实现
+│   ├── SchedulerMinHeap.js             # 最小堆实现
+│   ├── SchedulerPriorities.js          # 优先级定义
+│   ├── SchedulerFeatureFlags.js        # 特性开关
+│   ├── SchedulerProfiling.js           # 性能分析
+│   ├── forks/                          # 平台特定实现
+│   │   ├── SchedulerHostConfigDefault.js    # 默认配置
+│   │   ├── SchedulerHostConfigDOM.js        # DOM 环境
+│   │   └── SchedulerHostConfigMock.js       # 测试环境
+│   └── SchedulerPostTask.js            # PostTask API 支持
+├── index.js                            # 包入口
+├── unstable_mock.js                    # 测试 mock
+└── package.json                        # 包配置
+```
+
+#### 关键实现
+
+**Scheduler.js** - 任务调度核心
+```javascript
+function unstable_scheduleCallback(priorityLevel, callback, options) {
+  const currentTime = getCurrentTime();
+  const timeout = getTimeoutByPriorityLevel(priorityLevel);
+  const expirationTime = currentTime + timeout;
+  
+  const newTask = {
+    id: taskIdCounter++,
+    callback,
+    priorityLevel,
+    startTime: currentTime,
+    expirationTime,
+    sortIndex: -1,
+  };
+  
+  // 加入任务队列
+  push(taskQueue, newTask);
+  
+  // 请求调度
+  if (!isHostCallbackScheduled && !isPerformingWork) {
+    isHostCallbackScheduled = true;
+    requestHostCallback(flushWork);
+  }
+  
+  return newTask;
+}
+```
+
+**SchedulerMinHeap.js** - 最小堆数据结构
+```javascript
+export function push(heap, node) {
+  const index = heap.length;
+  heap.push(node);
+  siftUp(heap, node, index);
+}
+
+export function peek(heap) {
+  return heap.length === 0 ? null : heap[0];
+}
+
+export function pop(heap) {
+  if (heap.length === 0) {
+    return null;
+  }
+  
+  const first = heap[0];
+  const last = heap.pop();
+  
+  if (last !== first) {
+    heap[0] = last;
+    siftDown(heap, last, 0);
+  }
+  
+  return first;
+}
+```
+
+### 5. shared 包
+
+```
+packages/shared/
+├── src/
+│   ├── ReactSymbols.js                 # React 符号定义
+│   ├── ReactFeatureFlags.js            # 特性开关
+│   ├── ReactVersion.js                 # 版本信息
+│   ├── ReactTypes.js                   # TypeScript 类型
+│   ├── getComponentNameFromType.js     # 组件名称获取
+│   ├── checkPropTypes.js               # 属性类型检查
+│   ├── objectIs.js                     # Object.is polyfill
+│   ├── shallowEqual.js                 # 浅比较
+│   ├── isArray.js                      # 数组检查
+│   ├── consoleWithStackDev.js          # 开发环境控制台
+│   └── ReactErrorUtils.js              # 错误处理工具
+├── index.js                            # 包入口
+└── package.json                        # 包配置
+```
+
+## 重要工具目录
+
+### scripts 目录
+
+```
+scripts/
+├── build/                    # 构建脚本
+├── release/                  # 发布脚本
+├── jest/                     # Jest 测试配置
+├── rollup/                   # Rollup 构建配置
+├── babel/                    # Babel 配置
+├── eslint/                   # ESLint 规则
+├── flow/                     # Flow 类型检查
+├── prettier/                 # 代码格式化
+└── error-codes/              # 错误代码管理
+```
+
+### fixtures 目录
+
+```
+fixtures/
+├── art/                      # React ART 示例
+├── concurrent/               # 并发模式示例
+├── dom/                      # DOM 相关测试
+├── devtools/                 # 开发者工具测试
+├── fizz/                     # Fizz SSR 测试
+├── flight/                   # React Server Components 测试
+├── packaging/                # 打包测试
+├── scheduler/                # 调度器测试
+└── ssr/                      # 服务端渲染测试
+```
+
+## 文件命名约定
+
+### 文件后缀含义
+
+- **`.js`** - 普通 JavaScript 文件
+- **`.development.js`** - 开发环境版本
+- **`.production.min.js`** - 生产环境压缩版本
+- **`.profiling.min.js`** - 性能分析版本
+- **`.experimental.js`** - 实验性功能版本
+
+### 文件前缀含义
+
+- **`React*`** - React 核心功能
+- **`Fiber*`** - Fiber 相关实现
+- **`Scheduler*`** - 调度器相关
+- **`DOM*`** - DOM 特定功能
+- **`unstable_*`** - 不稳定 API
+
+## 调试时的重要文件
+
+### 1. 渲染流程相关
+
+```
+react-reconciler/src/
+├── ReactFiberWorkLoop.js          # 工作循环，设置断点观察渲染过程
+├── ReactFiberBeginWork.js         # beginWork，观察组件处理
+├── ReactFiberCompleteWork.js      # completeWork，观察节点完成
+└── ReactFiberCommitWork.js        # commit，观察 DOM 操作
+```
+
+### 2. Hook 相关
+
+```
+react-reconciler/src/
+├── ReactFiberHooks.js             # Hook 实现，观察状态管理
+react/src/
+├── ReactHooks.js                  # Hook API，观察调用入口
+```
+
+### 3. 事件系统
+
+```
+react-dom-bindings/src/events/
+├── EventListener.js               # 事件监听
+├── SyntheticEvent.js              # 合成事件
+└── plugins/                       # 各种事件插件
+```
+
+### 4. 调度系统
+
+```
+scheduler/src/
+├── Scheduler.js                   # 任务调度
+├── SchedulerMinHeap.js            # 优先队列
+```
+
+## 源码阅读路径建议
+
+### 初学者路径
+
+1. **从应用入口开始**
+   ```
+   react-dom/src/client/ReactDOMRoot.js (createRoot)
+   ↓
+   react-reconciler/src/ReactFiberReconciler.js (updateContainer)
+   ↓
+   react-reconciler/src/ReactFiberWorkLoop.js (scheduleUpdateOnFiber)
+   ```
+
+2. **理解基础数据结构**
+   ```
+   react-reconciler/src/ReactFiber.js (Fiber 节点)
+   ↓
+   react-reconciler/src/ReactFiberLane.js (优先级模型)
+   ↓
+   scheduler/src/SchedulerMinHeap.js (任务队列)
+   ```
+
+3. **学习核心算法**
+   ```
+   react-reconciler/src/ReactChildFiber.js (diff 算法)
+   ↓
+   react-reconciler/src/ReactFiberHooks.js (Hook 实现)
+   ↓
+   scheduler/src/Scheduler.js (任务调度)
+   ```
+
+### 进阶路径
+
+1. **并发特性**
+   ```
+   react-reconciler/src/ReactFiberSuspenseComponent.js
+   react-reconciler/src/ReactFiberTransition.js
+   react-reconciler/src/ReactFiberOffscreenComponent.js
+   ```
+
+2. **性能优化**
+   ```
+   react-reconciler/src/ReactFiberBeginWork.js (bailout 逻辑)
+   react-reconciler/src/ReactFiberLane.js (优先级管理)
+   scheduler/src/Scheduler.js (时间切片)
+   ```
+
+3. **错误处理**
+   ```
+   react-reconciler/src/ReactFiberThrow.js
+   react-reconciler/src/ReactFiberErrorLogger.js
+   shared/src/ReactErrorUtils.js
+   ```
+
+## 总结
+
+React 19 的源码结构体现了模块化和职责分离的设计原则：
+
+1. **清晰的分层**：核心逻辑、平台适配、工具支持分离
+2. **模块化设计**：每个包都有明确的职责和边界
+3. **便于调试**：关键文件和函数命名清晰，便于设置断点
+4. **扩展性好**：通过配置和接口支持不同平台
+
+理解这个结构将为深入学习 React 源码奠定坚实的基础。建议在调试时经常参考这个结构图，快速定位相关代码。

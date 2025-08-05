@@ -1,4 +1,11 @@
+import ExcalidrawViewer from '../../components/ExcalidrawViewer'
+import heap from "../public/diagrams/heap.excalidraw";
+import v1 from "../public/diagrams/mini-scheduler-v1.excalidraw";
+import v2 from "../public/diagrams/mini-scheduler-v2.excalidraw";
+
 # Scheduler 调度器
+
+<ExcalidrawViewer data={heap} />
 
 Scheduler（调度器）负责管理任务的调度和优先级。定义了任务调度的逻辑，包括任务的优先级、任务队列的管理等。是 React 中一个非常重要的组件。
 
@@ -16,7 +23,7 @@ React 并没有将本身的任务优先级调度和 Scheduler 耦合在一起，
 
 流程示意图如下所示：
 
-![](/drawio/mini-scheduler-v1.svg)
+<ExcalidrawViewer data={v1} />
 
 1. `schedule` 负责创建和 `push` 任务
 2. `push` 到 `taskQueue` 中的任务按照优先级和 id 进行排序
@@ -187,7 +194,8 @@ export default () => {
 2. 单纯的按照 `priority` 排序，如果期间不断有高优任务插入，低优任务就会一直被阻塞，而被“饿死”
 
 针对这两点，v2 改进的流程示意图如下:
-![](/drawio/mini-scheduler-v2.svg)
+
+<ExcalidrawViewer data={v2} height={600}/>
 
 关键代码如下：
 

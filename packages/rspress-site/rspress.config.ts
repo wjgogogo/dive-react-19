@@ -4,6 +4,7 @@ import { pluginShiki } from "@rspress/plugin-shiki";
 import { pluginPreview } from "@rspress/plugin-preview";
 import { pluginPlayground } from "@rspress/plugin-playground";
 import pluginMermaid from "rspress-plugin-mermaid";
+import { remarkCodeHike } from "@code-hike/mdx";
 
 export default defineConfig({
   base: "/dive-react-19/",
@@ -62,21 +63,38 @@ export default defineConfig({
   },
 
   markdown: {
-    showLineNumbers: true
+    showLineNumbers: true,
+    remarkPlugins: [
+      [
+        remarkCodeHike,
+        {
+          theme: "material-lighter",
+          lineNumbers: true,
+          showCopyButton: true,
+          autoImport: false
+        }
+      ]
+    ]
   },
   plugins: [
-    pluginShiki(),
-    pluginPreview({
-      defaultRenderMode: "pure",
-      iframeOptions: {
-        position: "fixed",
-        devPort: 8001
-      }
-    }),
-    pluginMermaid()
+    // pluginShiki(),
+    // pluginPreview({
+    //   defaultRenderMode: "pure",
+    //   iframeOptions: {
+    //     position: "fixed",
+    //     devPort: 8001
+    //   }
+    // }),
+    // pluginMermaid()
   ],
   builderConfig: {
     tools: {
+      rspack: (config) => {
+        config.module?.rules?.push({
+          test: /\.excalidraw$/i,
+          type: "json"
+        });
+      },
       source: {
         define: {
           "process.env.__IS_REACT_18__": "true"
