@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
-import { useTheme } from "./hooks/useTheme";
+import { useTheme } from "../hooks/useTheme";
 import { ZoomIn, ZoomOut, RotateCcw, Fullscreen, Minimize } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import clsx from "clsx";
 import "@excalidraw/excalidraw/index.css";
-import "./ExcalidrawViewer.css";
+import "./diagram.css";
 
 interface ExcalidrawViewerProps {
   data: any;
@@ -13,7 +13,7 @@ interface ExcalidrawViewerProps {
   width?: number;
 }
 
-export const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
+export const Diagram: React.FC<ExcalidrawViewerProps> = ({
   data,
   height = 400,
   width = "100%"
@@ -135,7 +135,7 @@ export const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
         } catch (error) {
           console.warn("全屏切换时自动适应内容失败:", error);
         }
-      }, isFullscreen ? 300 : 100); // 进入全屏需要更多时间等待动画完成
+      }, 300);
 
       return () => clearTimeout(timer);
     }
@@ -145,9 +145,9 @@ export const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
     <div
       ref={containerRef}
       className={clsx(
-        "relative overflow-hidden rounded-xl",
+        "relative overflow-hidden rounded-xl border border-gray-200 shadow-sm dark:border-gray-700",
         isFullscreen &&
-          "fixed inset-0 z-50 rounded-none bg-white dark:bg-gray-900"
+          "fixed inset-0 z-50 rounded-none border-none shadow-none bg-white dark:bg-gray-900"
       )}
     >
       {excalidrawAPI && (
@@ -219,4 +219,4 @@ export const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
   );
 };
 
-export default ExcalidrawViewer;
+export default Diagram;

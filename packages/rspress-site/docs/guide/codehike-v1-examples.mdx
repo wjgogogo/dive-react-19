@@ -1,0 +1,219 @@
+# CodeHike v1.0 功能展示
+
+本页面展示 CodeHike v1.0+ 的新功能和注解系统。
+
+## 基础语法高亮
+
+```js
+function greet(name) {
+  console.log(`Hello, ${name}!`);
+  return `Welcome to CodeHike v1.0`;
+}
+```
+
+## Focus 注解 - 高亮重要代码
+
+```js
+function useState(initialValue) {
+  // !focus
+  const [state, setState] = React.useState(initialValue);
+  
+  const updateState = (newValue) => {
+    // !focus[4:12]
+    setState(newValue);
+  };
+  
+  return [state, updateState];
+}
+```
+
+## Mark 注解 - 标记关键代码
+
+```jsx
+function MyComponent() {
+  // !mark
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      {/* !mark[6:27] */}
+      <span>Count: {count}</span>
+      <button onClick={() => setCount(count + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+}
+```
+
+## Callout 注解 - 代码注释气泡
+
+```ts
+interface User {
+  id: number;
+  name: string;
+  // !callout 这是用户的邮箱地址，必须是唯一的
+  email: string;
+}
+
+function createUser(userData: Partial<User>) {
+  // !callout[2:10] 这里进行数据验证，确保必填字段存在
+  if (!userData.name || !userData.email) {
+    throw new Error('Name and email are required');
+  }
+  
+  return {
+    id: Date.now(),
+    ...userData
+  } as User;
+}
+```
+
+## Link 注解 - 可点击链接
+
+```python
+# !link[1:6] https://docs.python.org/3/library/functions.html#print
+print("Hello World")
+
+def fibonacci(n):
+    # !link[4:13] https://en.wikipedia.org/wiki/Fibonacci_number
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+```
+
+## 组合使用多种注解
+
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function DataFetcher({ url }) {
+  // !focus
+  // !mark
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    // !callout 异步获取数据的核心逻辑
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // !link[8:13] https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // !focus[8:23]
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        // !mark
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [url]);
+  
+  // !callout 根据不同状态渲染不同内容
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!data) return <div>No data</div>;
+  
+  return (
+    <div>
+      <h2>Data:</h2>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
+```
+
+## CSS 样式示例
+
+```css
+/* !callout 这是主要的容器样式 */
+.container {
+  /* !focus */
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+  
+  /* !mark[2:15] */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* !link[1:17] https://css-tricks.com/snippets/css/a-guide-to-flexbox/ */
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* !callout[1:13] 响应式断点，针对小屏幕设备优化 */
+@media (max-width: 768px) {
+  .container {
+    /* !focus */
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+}
+```
+
+## Bash 脚本示例
+
+```bash
+#!/bin/bash
+
+# !callout 设置脚本在遇到错误时立即退出
+set -e
+
+# !focus
+echo "Starting deployment process..."
+
+# !mark[1:11]
+PROJECT_DIR="/var/www/myapp"
+BACKUP_DIR="/var/backups/myapp"
+
+# !callout[1:6] 创建备份目录（如果不存在）
+mkdir -p "$BACKUP_DIR"
+
+# !link[1:2] https://linux.die.net/man/1/cp
+cp -r "$PROJECT_DIR" "$BACKUP_DIR/backup-$(date +%Y%m%d-%H%M%S)"
+
+echo "Backup completed successfully!"
+
+# !focus
+# !callout 部署新版本
+git pull origin main
+npm install
+npm run build
+
+echo "Deployment completed!"
+```
+
+## 使用说明
+
+### 注解语法
+
+1. **Focus**: `!focus` 或 `!focus[start:end]`
+2. **Mark**: `!mark` 或 `!mark[start:end]`  
+3. **Callout**: `!callout 说明文字`
+4. **Link**: `!link[start:end] URL`
+
+### 特性说明
+
+- **Focus**: 用蓝色高亮显示重要代码
+- **Mark**: 用黄色高亮显示关键代码
+- **Callout**: 显示代码注释气泡
+- **Link**: 创建可点击的文档链接
+- **主题适配**: 自动适配明暗主题
+- **响应式**: 支持移动端显示
