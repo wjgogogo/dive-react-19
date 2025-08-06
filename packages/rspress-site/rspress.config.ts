@@ -4,7 +4,7 @@ import { pluginShiki } from "@rspress/plugin-shiki";
 import { pluginPreview } from "@rspress/plugin-preview";
 import { pluginPlayground } from "@rspress/plugin-playground";
 import pluginMermaid from "rspress-plugin-mermaid";
-import { remarkCodeHike } from "@code-hike/mdx";
+import { remarkCodeHike } from "codehike/mdx";
 
 export default defineConfig({
   base: "/dive-react-19/",
@@ -65,8 +65,8 @@ export default defineConfig({
   markdown: {
     mdxRs: false,
     globalComponents: [
-      path.join(__dirname, "components", "ExcalidrawViewer.tsx"),
-      path.join(__dirname, "components", "Code.tsx")
+      path.join(__dirname, "components", "core", "diagram.tsx"),
+      path.join(__dirname, "components", "core", "coder.tsx")
     ],
     checkDeadLinks: true,
     remarkPlugins: [
@@ -74,14 +74,8 @@ export default defineConfig({
         remarkCodeHike,
         {
           components: {
-            code: "Code"
-          },
-          theme: "material-lighter",
-          // lineNumbers: true,
-          autoImport: true,
-          showCopyButton: true,
-          showExpandButton: true,
-          autoLink: true
+            code: "Coder"
+          }
         }
       ]
     ]
