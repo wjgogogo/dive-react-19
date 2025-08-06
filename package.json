@@ -13,5 +13,6 @@
   "license": "MIT",
   "dependencies": {
     "prettier": "^3.3.3"
-  }
+  },
+  "repository": "https://github.com/wjgogogo/dive-react-19.git"
 }

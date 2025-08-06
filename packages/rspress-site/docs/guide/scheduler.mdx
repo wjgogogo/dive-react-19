@@ -1,7 +1,7 @@
-import ExcalidrawViewer from '../../components/ExcalidrawViewer'
 import heap from "../public/diagrams/heap.excalidraw";
 import v1 from "../public/diagrams/mini-scheduler-v1.excalidraw";
 import v2 from "../public/diagrams/mini-scheduler-v2.excalidraw";
+import scheduler from "../public/diagrams/scheduler.excalidraw";
 
 # Scheduler 调度器
 
@@ -195,7 +195,7 @@ export default () => {
 
 针对这两点，v2 改进的流程示意图如下:
 
-<ExcalidrawViewer data={v2} height={600}/>
+<ExcalidrawViewer data={v2} height={600} />
 
 关键代码如下：
 
@@ -409,7 +409,7 @@ v2 版本核心链路相对更完善，但也只是达到了 Demo 演示的目�
 
 `Scheduler` 核心的流程示意图如下：
 
-![](/drawio/scheduler.svg)
+<ExcalidrawViewer data={scheduler} height={800} />
 
 - 包含两个任务队列 `taskQueue` 和 `timerQueue`， 其中 `taskQueue` 存储的是需要立即执行的任务，而 `timerQueue` 存储的是延迟执行的任务，两个队列的优先级排序的功能是一致的
 - 因为存在两个优先级队列，那么在调度时，也会存在两种不同的调度方式，`requestHostTimeout` 和 `requestHostCallback`，但最终入口还是 `requestHostCallback`
@@ -696,9 +696,9 @@ scheduleTimeout();
 
 ![](/set-timeout.jpg)
 
-* 按照 60 fps 流畅的帧率来计算，一帧大概只有 16.67 ms(1000/60)，再减去页面渲染所需要的时间，留给开发者的时间就很少了，如果使用 `setTimeout` 会浪费掉宝贵的执行时间。
-* `requestIdleCalback` 的初衷是：能够在 EventLoop 中执行低优先级任务，减少对动画，交互等高优任务的影响。所以它主要的用来调度底优任务，且调用频率不可控，而 `Scheduler` 需要调度各种优先级的任务。
-* `requestAnimationFrame` 的执行时机是在下一次 Paint 之前，一般用于更新动画。调用频率是一帧一次，频率很低。
+- 按照 60 fps 流畅的帧率来计算，一帧大概只有 16.67 ms(1000/60)，再减去页面渲染所需要的时间，留给开发者的时间就很少了，如果使用 `setTimeout` 会浪费掉宝贵的执行时间。
+- `requestIdleCalback` 的初衷是：能够在 EventLoop 中执行低优先级任务，减少对动画，交互等高优任务的影响。所以它主要的用来调度底优任务，且调用频率不可控，而 `Scheduler` 需要调度各种优先级的任务。
+- `requestAnimationFrame` 的执行时机是在下一次 Paint 之前，一般用于更新动画。调用频率是一帧一次，频率很低。
 
 所以综合来看，只有 `MessageChannel` 满足一帧内可以多次调用，且执行时机足够早，不存在最小时延。
 
@@ -963,7 +963,6 @@ function forceFrameRate(fps: number) {
 #### 再次调度
 
 `workLoop` 返回 `true` 表示还有任务需要执行，但当前 loop 已经结束，那么就需要再次调度剩余的任务：
-
 
 ```js title="react/packages/scheduler/src/forks/Scheduler.js" {17,21,47,60}
 const performWorkUntilDeadline = () => {

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import { useTheme } from "./hooks/useTheme";
-import { ZoomIn, ZoomOut, RotateCcw, Fullscreen } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Fullscreen, Minimize } from "lucide-react";
 import { Button } from "./ui/button";
 import clsx from "clsx";
 import "@excalidraw/excalidraw/index.css";
@@ -20,6 +20,8 @@ export const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
 }) => {
   const theme = useTheme();
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // 自动适应内容大小
   useEffect(() => {
@@ -85,8 +87,69 @@ export const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
     }
   };
 
+  // 全屏相关功能
+  const handleFullscreen = async () => {
+    if (!containerRef.current) return;
+
+    try {
+      if (!isFullscreen) {
+        // 进入全屏
+        if (containerRef.current.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+        }
+      } else {
+        // 退出全屏
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+      }
+    } catch (error) {
+      console.warn("全屏操作失败:", error);
+    }
+  };
+
+  // 监听全屏状态变化
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  // 全屏状态变化时自动适应内容
+  useEffect(() => {
+    if (excalidrawAPI && data) {
+      const timer = setTimeout(() => {
+        try {
+          const elements = data.elements || [];
+          if (elements.length > 0) {
+            excalidrawAPI.scrollToContent(elements, {
+              fitToContent: true,
+              animate: true
+            });
+          }
+        } catch (error) {
+          console.warn("全屏切换时自动适应内容失败:", error);
+        }
+      }, isFullscreen ? 300 : 100); // 进入全屏需要更多时间等待动画完成
+
+      return () => clearTimeout(timer);
+    }
+  }, [isFullscreen, excalidrawAPI, data]);
+
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div
+      ref={containerRef}
+      className={clsx(
+        "relative overflow-hidden rounded-xl",
+        isFullscreen &&
+          "fixed inset-0 z-50 rounded-none bg-white dark:bg-gray-900"
+      )}
+    >
       {excalidrawAPI && (
         <div className={clsx("absolute top-2.5 right-2.5 z-10 flex gap-1")}>
           <Button
@@ -111,15 +174,23 @@ export const ExcalidrawViewer: React.FC<ExcalidrawViewerProps> = ({
             className="size-8"
             onClick={handleResetView}
           >
-            <Fullscreen />
+            <RotateCcw />
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="size-8"
+            onClick={handleFullscreen}
+          >
+            {isFullscreen ? <Minimize /> : <Fullscreen />}
           </Button>
         </div>
       )}
       <div
         className="excalidraw-viewer"
         style={{
-          height: height,
-          width: width
+          height: isFullscreen ? "100vh" : height,
+          width: isFullscreen ? "100vw" : width
         }}
       >
         <Excalidraw

@@ -63,30 +63,40 @@ export default defineConfig({
   },
 
   markdown: {
-    showLineNumbers: true,
+    mdxRs: false,
+    globalComponents: [
+      path.join(__dirname, "components", "ExcalidrawViewer.tsx"),
+      path.join(__dirname, "components", "Code.tsx")
+    ],
+    checkDeadLinks: true,
     remarkPlugins: [
       [
         remarkCodeHike,
         {
+          components: {
+            code: "Code"
+          },
           theme: "material-lighter",
-          lineNumbers: true,
+          // lineNumbers: true,
+          autoImport: true,
           showCopyButton: true,
-          autoImport: false
+          showExpandButton: true,
+          autoLink: true
         }
       ]
     ]
   },
-  plugins: [
-    // pluginShiki(),
-    // pluginPreview({
-    //   defaultRenderMode: "pure",
-    //   iframeOptions: {
-    //     position: "fixed",
-    //     devPort: 8001
-    //   }
-    // }),
-    // pluginMermaid()
-  ],
+  // plugins: [
+  //   pluginShiki(),
+  //   pluginPreview({
+  //     defaultRenderMode: "pure",
+  //     iframeOptions: {
+  //       position: "fixed",
+  //       devPort: 8001
+  //     }
+  //   }),
+  //   pluginMermaid()
+  // ],
   builderConfig: {
     tools: {
       rspack: (config) => {
