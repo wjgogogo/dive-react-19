@@ -12,7 +12,6 @@ import {
   InnerPre,
   InnerToken
 } from "codehike/code";
-import { lineNumbers } from "./annotation-handler/line-numbers";
 import { wordWrap } from "./annotation-handler/word-wrap";
 import { callout } from "./annotation-handler/callout";
 import { focus } from "./annotation-handler/focus";
@@ -107,7 +106,7 @@ export const Coder: React.FC<{ codeblock: RawCode }> = ({ codeblock }) => {
         <CopyButton text={highlighted?.code || codeblock.value} />
         <Pre
           code={highlighted}
-          handlers={[lineNumbers, wordWrap, callout, focus, mark, link]}
+          handlers={[wordWrap, callout, mark, link]}
           className={clsx(
             "overflow-auto border border-gray-200 bg-white p-4 text-sm shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900",
             title ? "rounded-b-lg" : "rounded-lg"

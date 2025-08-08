@@ -1,25 +1,41 @@
 import React from "react";
-import clsx from "clsx";
-import { AnnotationHandler } from "codehike/code";
+import { AnnotationHandler, InnerLine } from "codehike/code";
+
+const COLOR = "rgb(14 165 233)";
 
 export const mark: AnnotationHandler = {
   name: "mark",
-  Line: ({ annotation, ...props }) => (
-    <div
-      {...props}
-      className={clsx(
-        props.className,
-        "relative -ml-2 border-l-4 border-amber-500 from-amber-500/20 to-transparent pl-4 transition-all duration-200 hover:from-amber-500/30"
-      )}
-    />
-  ),
-  Inline: ({ annotation, ...props }) => (
-    <span
-      {...props}
-      className={clsx(
-        props.className,
-        "rounded-md bg-amber-400/25 px-1.5 py-0.5 font-semibold ring-1 ring-amber-400/40 transition-colors hover:bg-amber-400/35"
-      )}
-    />
-  )
+  Line: ({ annotation, ...props }) => {
+    const color = (annotation?.query as string) || COLOR;
+    return (
+      <div
+        className="relative -ml-2 pl-2 transition-colors duration-200"
+        style={{
+          borderLeft: "solid 2px transparent",
+          borderLeftColor: annotation ? (color as string) : undefined,
+          backgroundColor: annotation
+            ? (`rgb(from ${color} r g b / 0.15)` as any)
+            : undefined
+        }}
+      >
+        <InnerLine merge={props} />
+      </div>
+    );
+  },
+  Inline: ({ annotation, children, ...props }) => {
+    const color = (annotation?.query as string) || COLOR;
+    return (
+      <span
+        className="rounded-md px-1 py-0.5"
+        style={{
+          border: annotation ? `solid 1px ${color}` : undefined,
+          backgroundColor: annotation
+            ? (`rgb(from ${color} r g b / 0.15)` as any)
+            : undefined
+        }}
+      >
+        {children}
+      </span>
+    );
+  }
 };

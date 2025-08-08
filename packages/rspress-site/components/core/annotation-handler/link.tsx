@@ -1,5 +1,4 @@
 import React from "react";
-import clsx from "clsx";
 import { AnnotationHandler } from "codehike/code";
 
 export const link: AnnotationHandler = {
@@ -8,13 +7,11 @@ export const link: AnnotationHandler = {
     <a
       {...props}
       href={annotation.query}
-      className={clsx(
-        props.className,
-        "inline-flex items-center gap-1 rounded-md bg-blue-50 px-1.5 py-0.5 text-blue-700 underline decoration-blue-400 underline-offset-2 transition-all hover:bg-blue-100 hover:text-blue-800 hover:decoration-blue-600 dark:bg-blue-950 dark:text-blue-300 dark:decoration-blue-500 dark:hover:bg-blue-900 dark:hover:text-blue-200"
-      )}
+      className={
+        "inline-flex items-center gap-1 rounded-md bg-blue-50 px-1 py-0.5 text-blue-700 underline decoration-blue-400 underline-offset-2 transition-all hover:bg-blue-100 hover:text-blue-800 hover:decoration-blue-600 dark:bg-blue-950 dark:text-blue-300 dark:decoration-blue-500 dark:hover:bg-blue-900 dark:hover:text-blue-200"
+      }
       target="_blank"
       rel="noopener noreferrer"
-      title={`访问: ${annotation.query}`}
     >
       {props.children}
       <svg
