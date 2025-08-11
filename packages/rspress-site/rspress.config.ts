@@ -66,7 +66,8 @@ export default defineConfig({
     mdxRs: false,
     globalComponents: [
       path.join(__dirname, "components", "core", "diagram.tsx"),
-      path.join(__dirname, "components", "core", "coder.tsx")
+      path.join(__dirname, "components", "core", "coder.tsx"),
+      path.join(__dirname, "components", "core", "tabs.tsx")
     ],
     checkDeadLinks: true,
     remarkPlugins: [
