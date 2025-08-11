@@ -2,7 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import { useTheme } from "../hooks/useTheme";
 import { CopyButton } from "./copy-button";
-import { extractTitleFromMeta } from "./utils/title-parser";
+import { extractMaxHeight, extractTitle } from "./utils/meta-parser";
 import {
   Pre,
   RawCode,
@@ -60,21 +60,23 @@ export const Coder: React.FC<{
     highlightCode();
   }, [codeblock, theme]);
 
-  // 代码块标题（从 meta 中提取）
-  const title = extractTitleFromMeta(codeblock.meta);
+  const title = React.useMemo(
+    () => extractTitle(codeblock.meta),
+    [codeblock.meta]
+  );
 
-  const startLine = React.useMemo(() => {
-    const match = codeblock.meta?.match(/startLine=(\d+)/);
-    return match ? parseInt(match[1], 10) : 1;
-  }, [codeblock.meta]);
+  const maxHeight = React.useMemo(
+    () => extractMaxHeight(codeblock.meta),
+    [codeblock.meta]
+  );
 
   const renderTitle = () => {
     return (
       title && (
         <div className="flex items-center justify-between rounded-t-lg border border-b-0 border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-center gap-2">
-            <span 
-              className="max-w-md truncate text-sm font-medium text-gray-700 dark:text-gray-300" 
+            <span
+              className="max-w-md truncate text-sm font-medium text-gray-700 dark:text-gray-300"
               title={title}
             >
               {title}
@@ -124,6 +126,7 @@ export const Coder: React.FC<{
           handlers={[
             wordWrap,
             callout,
+            focus,
             mark,
             link,
             fold,
@@ -133,13 +136,16 @@ export const Coder: React.FC<{
             CollapseContent
           ]}
           className={clsx(
-            "overflow-auto border border-gray-200 bg-white p-4 text-sm shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900",
+            "overflow-auto border border-gray-200 bg-white p-2 text-sm shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900",
             variant === "tab"
               ? "rounded-b-lg border-t-0"
               : title
                 ? "rounded-b-lg"
                 : "rounded-lg"
           )}
+          style={{
+            maxHeight: maxHeight ? `${maxHeight}px` : undefined
+          }}
         />
       </div>
     </div>
