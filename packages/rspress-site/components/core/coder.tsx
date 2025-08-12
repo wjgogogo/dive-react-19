@@ -20,6 +20,7 @@ import { mark } from "./annotation-handler/mark";
 import { link } from "./annotation-handler/link";
 import { fold } from "./annotation-handler/fold";
 import { className } from "./annotation-handler/classname";
+import { diff } from "./annotation-handler/diff";
 import {
   collapse,
   CollapseTrigger,
@@ -131,6 +132,7 @@ export const Coder: React.FC<{
             link,
             fold,
             className,
+            diff,
             collapse,
             CollapseTrigger,
             CollapseContent

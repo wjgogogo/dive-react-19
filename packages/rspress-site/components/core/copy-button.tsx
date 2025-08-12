@@ -30,7 +30,7 @@ export function CopyButton({ text, className = "" }: CopyButtonProps) {
 
   return (
     <button
-      className={`group/copy absolute top-2 right-2 z-10 rounded-md border border-gray-700/50 shadow-md backdrop-blur-sm transition-all duration-200 hover:bg-gray-200 dark:border-gray-700 dark:text-gray-700 dark:hover:bg-gray-100/10`}
+      className={`group/copy absolute top-1 right-1 z-10 rounded-md border border-gray-700/50 shadow-md backdrop-blur-sm transition-all duration-200 hover:bg-gray-200 dark:border-gray-700 dark:text-gray-700 dark:hover:bg-gray-100/10`}
       aria-label={copied ? "已复制到剪贴板" : "复制代码到剪贴板"}
       onClick={handleCopy}
       disabled={copied}

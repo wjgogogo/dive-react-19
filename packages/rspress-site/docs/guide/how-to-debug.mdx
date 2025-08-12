@@ -24,17 +24,17 @@ pnpm react:dev
 
 ![](/debug.png)
 
-如果使用 VSCode 编辑器，在启动项目后，可直接在**运行和调试**面板中的选择`启动 react debug`，就可以使用 VSCode 断点调试 React 源码。
+如果使用 VSCode 编辑器，在启动项目后，可直接在**运行和调试**面板中选择`启动 react debug`，就可以使用 VSCode 断点调试 React 源码。
 
 ![](/debug-vscode.png)
 
 :::tip
-本仓库使用的是 React `v19.0.0` 版本，对应的 tag 为 [v19.0.0](https://github.com/facebook/react/tree/v19.0.0)。
+本仓库使用的是 React v19.0.0 版本，对应的 tag 为 [v19.0.0](https://github.com/facebook/react/tree/v19.0.0)。
 :::
 
 ## 使用 Webpack 调试 React 源码
 
-如果你想调试 React 最新版的代码，实时跟踪 React 进展。也可以采用和本仓库类似的方式，关键步骤如下。
+如果你想调试 React 最新版代码，实时跟踪 React 进展，也可以采用和本仓库类似的方式，关键步骤如下。
 
 新建项目，假设项目名为 `react-debug`。
 
@@ -96,8 +96,9 @@ module.exports = {
   mode: "development",
   devtool: "cheap-module-source-map",
   entry: "./src/index.jsx",
+  // !callout[/resolve/] 将 react 解析定位到源码文件
   resolve: {
-    // 将 react 解析定位到源码文件
+    // !className(1:15) border-2! border-blue-300! rounded-sm
     alias: {
       react: path.resolve(__dirname, "./react/packages/react"),
       "react-client": path.resolve(__dirname, "./react/packages/react-client"),
@@ -117,8 +118,8 @@ module.exports = {
   module: {
     rules: [
       {
-        // 映射 babel 编译的代码的 source map
         enforce: "pre",
+        // !callout[/exclude/] 映射 babel 编译的代码的 source map
         exclude: /@babel(?:\/|\\{1,2})runtime/,
         test: /\.(js|mjs|jsx|css)$/,
         loader: "source-map-loader"
@@ -136,7 +137,7 @@ module.exports = {
                 runtime: "automatic"
               }
             ],
-            // react 源码使用 flow 语法，需要 flow 插件编译
+            // !callout[/\[.*?\]/] react 源码使用 flow 语法，需要 flow 插件编译
             ["@babel/preset-flow"]
           ]
         }
@@ -152,9 +153,10 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "./public/index.html")
     }),
+    // !callout[/DefinePlugin/] react 源码中所使用的全局变量
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify("development"),
-      // react 源码中所使用的全局变量
+      // !mark(1:3)
       __DEV__: true, // 用于区分开发环境和生成环境
       __EXPERIMENTAL__: true, // 用于控制实验性功能的开关，实验性功能通常是下一个开发版本的具有破坏性的功能
       __PROFILE__: false // 是 React 源码中用于性能分析的全局标志，主要用于控制与性能分析相关的功能是否启用
@@ -193,9 +195,9 @@ module.exports = {
 
 ### 源码修改
 
-React 在编译时才会提供 renderer，可以直接跳过 React 的脚本行为，因为本文只关注 CSR，所以写死为 `ReactFiberConfig.dom` ：
+React 在编译时才会提供 renderer，可以直接跳过 React 脚本行为，因为本文只关注 CSR，所以写死为 `ReactFiberConfig.dom`：
 
-```js title="react/packages/react-reconciler/src/ReactFiberConfig.js" {9-11}
+```js title="react/packages/react-reconciler/src/ReactFiberConfig.js"
 // We expect that our Rollup, Jest, and Flow configurations
 // always shim this module with the corresponding host config
 // (either provided by a renderer, or a generic shim for npm).
@@ -204,42 +206,48 @@ React 在编译时才会提供 renderer，可以直接跳过 React 的脚本行�
 // sure that if we *do* accidentally break the configuration,
 // the failure isn't silent.
 
+// !diff -
 // throw new Error('This module must be shimmed by a specific renderer.');
-
+// !diff +
 export * from "./forks/ReactFiberConfig.dom";
 ```
 
 `log` 和 `unstable_setDisableYieldValue` 函数在测试环境中才会存在，这里直接设置为空：
 
-```js title="react/packages/react-reconciler/src/Scheduler.js" {4-9}
+```js title="react/packages/react-reconciler/src/Scheduler.js"
 // this doesn't actually exist on the scheduler, but it *does*
 // on scheduler/unstable_mock, which we'll need for internal testing
-
+// !diff -
 // export const log = Scheduler.log;
-// export const unstable_setDisableYieldValue =
-//   Scheduler.unstable_setDisableYieldValue;
-
+// !diff -
+// export const unstable_setDisableYieldValue = Scheduler.unstable_setDisableYieldValue;
+// !diff +
 export const log = () => {};
+// !diff +
 export const unstable_setDisableYieldValue = () => {};
 ```
 
-React 使用 `ReactSharedInternals` 来共享内部功能和状态， 并且 Client 和 Server 各自一套状态，这里也直接写死为 Client 对应的版本：
+React 使用 `ReactSharedInternals` 来共享内部功能和状态，并且 Client 和 Server 各自一套状态，这里也直接写死为 Client 对应的版本：
 
-```js title="react/packages/shared/ReactSharedInternals.js" {5-6}
+```js title="react/packages/shared/ReactSharedInternals.js"
+// !diff -
 // import * as React from 'react';
-// const ReactSharedInternals =
-// React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
-
+// !diff -
+// const ReactSharedInternals = React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+// !diff +
 import ReactSharedInternals from "../react/src/ReactSharedInternalsClient";
+// !diff +
 export default ReactSharedInternals;
 ```
 
-解决一下 flow 语法编译错误的问题:
+解决一下 flow 语法编译错误问题：
 
 ```js title="react/packages/react-reconciler/src/ReactFiberDevToolsHook.js"
-// 将下面这一行的 const 关键字改成 var
+// !callout[/const/] 将这一行的 const 关键字改成 var
+// !diff -
 // declare const __REACT_DEVTOOLS_GLOBAL_HOOK__: Object | void;
 
+// !diff +
 declare var __REACT_DEVTOOLS_GLOBAL_HOOK__: Object | void;
 ```
 

@@ -2,12 +2,14 @@ import heap from "../public/diagrams/heap.excalidraw";
 import v1 from "../public/diagrams/mini-scheduler-v1.excalidraw";
 import v2 from "../public/diagrams/mini-scheduler-v2.excalidraw";
 import scheduler from "../public/diagrams/scheduler.excalidraw";
+import V1Demo from "../../demo/mini-scheduler-v1.tsx";
+import V2Demo from "../../demo/mini-scheduler-v2.tsx";
 
 # Scheduler 调度器
 
 <Diagram data={heap} />
 
-Scheduler（调度器）负责管理任务的调度和优先级。定义了任务调度的逻辑，包括任务的优先级、任务队列的管理等。是 React 中一个非常重要的组件。
+Scheduler（调度器）负责管理任务的调度和优先级。定义了任务调度的逻辑，包括任务的优先级、任务队列的管理等。是 React 的核心组件。
 
 React 并没有将本身的任务优先级调度和 Scheduler 耦合在一起，为了保证其通用性，Scheduler 是作为一个独立的包存在。可以直接安装 [Scheduler](https://www.npmjs.com/package/scheduler) 包来使用。
 
@@ -31,7 +33,7 @@ React 并没有将本身的任务优先级调度和 Scheduler 耦合在一起，
 
 关键代码如下：
 
-```ts 
+```ts
 const taskQueue = [];
 
 let id = 0;
@@ -71,127 +73,12 @@ function peek() {
 
 最最基础版的 `mini-scheduler` 就已经实现了，可通过下面的 Demo 体验：
 
-```tsx preview
-/**
- * mini-scheduler
- */
-const taskQueue = [];
-
-let id = 0;
-
-function schedule(execute: () => void, priority: number) {
-  const task = {
-    id: id++,
-    execute,
-    priority
-  };
-  push(task);
-  console.log("schedule task: ", task);
-  workLoop();
-}
-
-function workLoop() {
-  while (taskQueue.length) {
-    const task = peek();
-    console.log("perform task: ", task);
-    task.execute();
-  }
-}
-
-function push(task) {
-  taskQueue.push(task);
-  taskQueue.sort((a, b) => {
-    // 先比较优先级，如果优先级相同，再比较 id
-    const diff = a.priority - b.priority;
-    return diff !== 0 ? diff : a.id - b.id;
-  });
-}
-
-function peek() {
-  return taskQueue.shift();
-}
-
-/**
- * demo
- */
-export default () => {
-  const onHighPriorityClick = () => {
-    const execute = () => {
-      const container = document.getElementById("mini-scheduler");
-      if (container) {
-        const node = document.createElement("div");
-        node.innerText += Date.now();
-        container.appendChild(node);
-      }
-    };
-
-    schedule(execute, /* 0 代表高优先级*/ 0);
-    schedule(execute, /* 0 代表高优先级*/ 0);
-  };
-
-  const onLowPriorityClick = () => {
-    const execute = () => {
-      const container = document.getElementById("mini-scheduler");
-      if (container) {
-        container?.classList.toggle("bg-sky-500");
-      }
-    };
-
-    schedule(execute, /* 1 代表低优先级*/ 1);
-  };
-
-  const onMixPriorityClick = () => {
-    schedule(() => {
-      const container = document.getElementById("mini-scheduler");
-      if (container) {
-        const node = document.createElement("div");
-        node.innerText += "低优";
-        container.appendChild(node);
-      }
-    }, 1);
-
-    schedule(() => {
-      const container = document.getElementById("mini-scheduler");
-      if (container) {
-        const node = document.createElement("div");
-        node.innerText += "高优";
-        container.appendChild(node);
-      }
-    }, 0);
-  };
-
-  return (
-    <div>
-      <div className="mb-2">
-        <button
-          className="mr-2 rounded-lg border-2 border-solid border-gray-500 p-2 text-sm"
-          onClick={onHighPriorityClick}
-        >
-          高优先级任务
-        </button>
-        <button
-          className="mr-2 rounded-lg border-2 border-solid border-gray-500 p-2 text-sm"
-          onClick={onLowPriorityClick}
-        >
-          低优先级任务
-        </button>
-        <button
-          className="mr-2 rounded-lg border-2 border-solid border-gray-500 p-2 text-sm"
-          onClick={onMixPriorityClick}
-        >
-          混合优先级任务
-        </button>
-      </div>
-      <div id="mini-scheduler" />
-    </div>
-  );
-};
-```
+<V1Demo />
 
 但这个版本有两个最大的问题：
 
-1. `schedule` 任务后，就立即开始了 loop 执行（即使同时插入底优，高优任务，也会先执行底优任务），现实中会延后执行
-2. 单纯的按照 `priority` 排序，如果期间不断有高优任务插入，低优任务就会一直被阻塞，而被“饿死”
+1. `schedule` 任务后，就立即开始了 loop 执行（即使同时插入底优，高优任务，也会先执行底优任务），实际需要延后执行
+2. 单纯按照 `priority` 排序，如果期间不断有高优任务插入，低优任务就会一直被阻塞，而被"饿死"
 
 针对这两点，v2 改进的流程示意图如下:
 
@@ -261,145 +148,7 @@ function peek() {
 }
 ```
 
-```tsx preview
-/**
- * mini-scheduler-v2
- */
-const taskQueue = [];
-
-let id = 0;
-
-function schedule(execute: () => void, priority: number) {
-  // 根据优先级计算出任务的过期时间，并以过期时间作为排序依据
-  // 即使在插入底优任务后，不断有高优任务插入，也能保证随着时间的推移，底优任务被排在第一位
-  let timeout;
-  if (priority === 0) {
-    timeout = 0;
-  } else {
-    timeout = 100;
-  }
-  const expirationTime = Date.now() + timeout;
-  const task = {
-    id: id++,
-    execute,
-    expirationTime
-  };
-  push(task);
-  console.log("schedule task: ", task);
-  scheduleWorkLoop();
-}
-
-// 标识 loop 是否在执行中
-let isLoopRunning = false;
-
-function scheduleWorkLoop() {
-  // 只有在 loop 没有启动时，才需要 schedule
-  if (!isLoopRunning) {
-    isLoopRunning = true;
-    // 暂时用 setTimeout 做延迟处理
-    setTimeout(() => {
-      workLoop();
-    }, 0);
-  }
-}
-
-function workLoop() {
-  while (taskQueue.length) {
-    const task = peek();
-    console.log("perform task: ", task);
-    task.execute();
-  }
-  isLoopRunning = false;
-}
-
-function push(task) {
-  taskQueue.push(task);
-  taskQueue.sort((a, b) => {
-    // 先比较过期时间，再比较 id
-    const diff = a.expirationTime - b.expirationTime;
-    return diff !== 0 ? diff : a.id - b.id;
-  });
-}
-
-function peek() {
-  return taskQueue.shift();
-}
-/**
- * demo
- */
-export default () => {
-  const onHighPriorityClick = () => {
-    const execute = () => {
-      const container = document.getElementById("mini-scheduler-v2");
-      if (container) {
-        const node = document.createElement("div");
-        node.innerText += Date.now();
-        container.appendChild(node);
-      }
-    };
-
-    schedule(execute, /* 0 代表高优先级*/ 0);
-    schedule(execute, /* 0 代表高优先级*/ 0);
-  };
-
-  const onLowPriorityClick = () => {
-    const execute = () => {
-      const container = document.getElementById("mini-scheduler-v2");
-      if (container) {
-        container?.classList.toggle("bg-sky-500");
-      }
-    };
-
-    schedule(execute, /* 1 代表低优先级*/ 1);
-  };
-
-  const onMixPriorityClick = () => {
-    schedule(() => {
-      const container = document.getElementById("mini-scheduler-v2");
-      if (container) {
-        const node = document.createElement("div");
-        node.innerText += "低优";
-        container.appendChild(node);
-      }
-    }, 1);
-
-    schedule(() => {
-      const container = document.getElementById("mini-scheduler-v2");
-      if (container) {
-        const node = document.createElement("div");
-        node.innerText += "高优";
-        container.appendChild(node);
-      }
-    }, 0);
-  };
-
-  return (
-    <div>
-      <div className="mb-2">
-        <button
-          className="mr-2 rounded-lg border-2 border-solid border-gray-500 p-2 text-sm"
-          onClick={onHighPriorityClick}
-        >
-          高优先级任务
-        </button>
-        <button
-          className="mr-2 rounded-lg border-2 border-solid border-gray-500 p-2 text-sm"
-          onClick={onLowPriorityClick}
-        >
-          低优先级任务
-        </button>
-        <button
-          className="mr-2 rounded-lg border-2 border-solid border-gray-500 p-2 text-sm"
-          onClick={onMixPriorityClick}
-        >
-          混合优先级任务
-        </button>
-      </div>
-      <div id="mini-scheduler-v2" />
-    </div>
-  );
-};
-```
+<V2Demo />
 
 v2 版本核心链路相对更完善，但也只是达到了 Demo 演示的目的，距离业务可用还相差甚远。
 
@@ -411,9 +160,9 @@ v2 版本核心链路相对更完善，但也只是达到了 Demo 演示的目�
 
 <Diagram data={scheduler} height={800} />
 
-- 包含两个任务队列 `taskQueue` 和 `timerQueue`， 其中 `taskQueue` 存储的是需要立即执行的任务，而 `timerQueue` 存储的是延迟执行的任务，两个队列的优先级排序的功能是一致的
-- 因为存在两个优先级队列，那么在调度时，也会存在两种不同的调度方式，`requestHostTimeout` 和 `requestHostCallback`，但最终入口还是 `requestHostCallback`
-- 在 loop 执行任务时，并不是 Demo 示例一般一直到任务清空，而是设置了一些中断条件，以便让出主线程，让浏览器可以及时响应交互
+- 包含两个任务队列 `taskQueue` 和 `timerQueue`，其中 `taskQueue` 存储需要立即执行的任务，而 `timerQueue` 存储延迟执行的任务，两个队列的优先级排序功能一致
+- 因为存在两个优先级队列，在调度时也会存在两种不同的调度方式，`requestHostTimeout` 和 `requestHostCallback`，但最终入口还是 `requestHostCallback`
+- 在 loop 执行任务时，并不像 Demo 示例一样一直到任务清空，而是设置了一些中断条件，以便让出主线程，让浏览器及时响应交互
 
 ### 事件优先级
 
@@ -438,13 +187,10 @@ export const normalPriorityTimeout = 5000;
 export const lowPriorityTimeout = 10000;
 ```
 
-```js title="react/packages/scheduler/src/forks/Scheduler.js" {54,59,67,86,97}
-
+```js title="react/packages/scheduler/src/forks/Scheduler.js"
 var maxSigned31BitInt = 1073741823;
 
-/**
- * 任务调度的起点
- */
+// !callout[/unstable_scheduleCallback/] 任务调度的起点
 function unstable_scheduleCallback(
   priorityLevel: PriorityLevel,
   callback: Callback,
@@ -452,9 +198,9 @@ function unstable_scheduleCallback(
 ): Task {
   var currentTime = getCurrentTime();
 
-  // 如果设置了 delay, 该任务就是延迟执行任务
   var startTime;
   if (typeof options === 'object' && options !== null) {
+    // !callout[/delay/] 如果设置了 delay, 该任务就是延迟执行任务
     var delay = options.delay;
     if (typeof delay === 'number' && delay > 0) {
       startTime = currentTime + delay;
@@ -465,6 +211,7 @@ function unstable_scheduleCallback(
     startTime = currentTime;
   }
 
+  // !mark
   // 根据不同优先级设置过期时间
   var timeout;
   switch (priorityLevel) {
@@ -478,7 +225,7 @@ function unstable_scheduleCallback(
       break;
     case IdlePriority:
       // Never times out
-      // Math.pow(2, 30) - 1，一个超大的数，可以认为没有超时时间
+      // !callout[/maxSigned31BitInt/] Math.pow(2, 30) - 1，一个超大的数，可以认为没有超时时间
       timeout = maxSigned31BitInt;
       break;
     case LowPriority:
@@ -496,7 +243,7 @@ function unstable_scheduleCallback(
 
   var newTask: Task = {
     id: taskIdCounter++,
-    // callback 是实际执行的任务
+    // !callout[/callback/] 实际执行的任务
     callback,
     priorityLevel,
     startTime,
@@ -506,13 +253,11 @@ function unstable_scheduleCallback(
 
 
   if (startTime > currentTime) {
-    // This is a delayed task.
-    // 延迟执行任务的排序依据是任务开始的时间
+    // !callout[/startTime/] 延迟执行任务的排序依据是任务开始的时间
     newTask.sortIndex = startTime;
-    // 插入到延迟队列中
+    // !callout[/push/] 插入到延迟队列中
     push(timerQueue, newTask);
-    // 获取最高优的立即执行任务，如果当前没有立即执行任务，并且当前的任务是最高优的延迟任务
-    // 就通过 timeout 去延后调度
+    // !callout[/peek/] 获取最高优的立即执行任务，如果当前没有立即执行任务，并且当前的任务是最高优的延迟任务，就通过 timeout 去延后调度
     if (peek(taskQueue) === null && newTask === peek(timerQueue)) {
       // All tasks are delayed, and this is the task with the earliest delay.
       if (isHostTimeoutScheduled) {
@@ -522,12 +267,11 @@ function unstable_scheduleCallback(
         isHostTimeoutScheduled = true;
       }
       // Schedule a timeout.
-      // 以最高优延迟任务的开始时间作为 delay 的依据，当到期后，该延迟任务也就变成立即执行任务
-      // 会被放到 taskQueue 中，然后真正被执行
+      // !callout[/requestHostTimeout/] 以最高优延迟任务的开始时间作为 delay 的依据，当到期后，该延迟任务也就变成立即执行任务，会被放到 taskQueue 中，然后真正被执行
       requestHostTimeout(handleTimeout, startTime - currentTime);
     }
   } else {
-    // 立即执行任务的排序依据是任务过期的时间
+    // !callout[/expirationTime/] 立即执行任务的排序依据是任务过期的时间
     newTask.sortIndex = expirationTime;
     // 插入到立即执行队列中
     push(taskQueue, newTask);
@@ -545,17 +289,17 @@ function unstable_scheduleCallback(
 
 ### 小顶堆（优先级队列的实现）
 
-前面 Demo 中，我们直接使用原生的 `sort` 方法来进行排序，由于它取决于具体实现，无法保证排序的时间和空间复杂度。
+前面 Demo 中，我们直接使用原生 `sort` 方法进行排序，由于它取决于具体实现，无法保证排序的时间和空间复杂度。
 
 优先级队列的使用场景是：
 
 1. 数组是动态的，每次需要找最高优任务，找到之后需要从数组里删除这个任务
 2. 不断有新的任务插入数组
 
-`Scheduler` 采用小顶堆来实现优先级队列的排序。小顶堆的特点：
+`Scheduler` 采用小顶堆实现优先级队列排序。小顶堆特点：
 
-1. 是一棵完全的二叉树，即：除最后一层外，其它层的节点都是满的，且最后一层靠左排列
-2. 每一个节点的值都小于其子树节点的每一项
+1. 是一棵完全二叉树，即：除最后一层外，其它层的节点都是满的，且最后一层靠左排列
+2. 每个节点的值都小于其子树节点的每一项
 
 ![](/drawio/heap.svg)
 
@@ -572,12 +316,12 @@ function unstable_scheduleCallback(
 - `pop`：从堆顶取出数据
 - `peek`：获取堆顶节点，即“排序依据最小的值”的节点
 
-```js title="react/packages/scheduler/src/SchedulerMinHeap.js" {6,23}
+```js title="react/packages/scheduler/src/SchedulerMinHeap.js"
 
 export function push<T: Node>(heap: Heap<T>, node: T): void {
   const index = heap.length;
   heap.push(node);
-  // 先把新元素插入数组尾部，然后从下往上调整最小堆：
+  // !callout[/siftUp/] 先把新元素插入数组尾部，然后从下往上调整最小堆：
   siftUp(heap, node, index);
 }
 
@@ -600,9 +344,8 @@ export function pop<T: Node>(heap: Heap<T>): T | null {
   return first;
 }
 
-/**
- * 调整尾部元素以及尾部元素的祖先，一直往上调整，直到不再需要调整为止
- */
+
+// !callout[/siftUp/] 调整尾部元素以及尾部元素的祖先，一直往上调整，直到不再需要调整为止
 function siftUp<T: Node>(heap: Heap<T>, node: T, i: number): void {
   let index = i;
   while (index > 0) {
@@ -620,9 +363,7 @@ function siftUp<T: Node>(heap: Heap<T>, node: T, i: number): void {
   }
 }
 
-/**
- * 检查每个子堆的结构，确保最小值在父节点，不满足就交换父节点与最小的子节点
- */
+// !callout[/siftDown/] 检查每个子堆的结构，确保最小值在父节点，不满足就交换父节点与最小的子节点
 function siftDown<T: Node>(heap: Heap<T>, node: T, i: number): void {
   let index = i;
   const length = heap.length;
@@ -682,9 +423,9 @@ function compare(a: Node, b: Node) {
 
 ![](/frame.png)
 
-宏任务的选择通常有：`setTimeout`，`requestIdleCalback`，`requestAnimationFrame`，`MessageChannel`等。
+宏任务选择通常有：`setTimeout`，`requestIdleCallback`，`requestAnimationFrame`，`MessageChannel` 等。
 
-`setTimeout` 存在最小时延 4 ms 的限制，若嵌套层级超 5 层且 timeout 小于 4ms 则设为 4ms。
+`setTimeout` 存在最小时延 4 ms 限制，若嵌套层级超 5 层且 timeout 小于 4ms 则设为 4ms。
 
 ```js
 function scheduleTimeout() {
@@ -696,16 +437,16 @@ scheduleTimeout();
 
 ![](/set-timeout.jpg)
 
-- 按照 60 fps 流畅的帧率来计算，一帧大概只有 16.67 ms(1000/60)，再减去页面渲染所需要的时间，留给开发者的时间就很少了，如果使用 `setTimeout` 会浪费掉宝贵的执行时间。
-- `requestIdleCalback` 的初衷是：能够在 EventLoop 中执行低优先级任务，减少对动画，交互等高优任务的影响。所以它主要的用来调度底优任务，且调用频率不可控，而 `Scheduler` 需要调度各种优先级的任务。
-- `requestAnimationFrame` 的执行时机是在下一次 Paint 之前，一般用于更新动画。调用频率是一帧一次，频率很低。
+- 按照 60 fps 流畅帧率计算，一帧大概只有 16.67 ms(1000/60)，再减去页面渲染所需时间，留给开发者的时间就很少了，如果使用 `setTimeout` 会浪费宝贵的执行时间。
+- `requestIdleCalback` 初衷是：能够在 EventLoop 中执行低优先级任务，减少对动画，交互等高优任务的影响。所以它主要用来调度底优任务，且调用频率不可控，而 `Scheduler` 需要调度各种优先级的任务。
+- `requestAnimationFrame` 执行时机是在下一次 Paint 之前，一般用于更新动画。调用频率是一帧一次，频率很低。
 
 所以综合来看，只有 `MessageChannel` 满足一帧内可以多次调用，且执行时机足够早，不存在最小时延。
 
 回到源码中，在 `scheduleCallback` 中，如果不存在任何立即执行任务，只存在延迟任务时，会通过 `requestHostTimeout` 调度：
 
-```js title="react/packages/scheduler/src/forks/Scheduler.js" {12,21,26}
-// 本质上就是 setTimeout 延迟执行，不需要那么高的执行频次，使用 setTimeout 是 ok 的
+```js title="react/packages/scheduler/src/forks/Scheduler.js"
+// !callout[/requestHostTimeout/] 本质上就是 setTimeout 延迟执行，不需要那么高的执行频次，使用 setTimeout 是 ok 的
 function requestHostTimeout(
   callback: (currentTime: number) => void,
   ms: number,
@@ -718,15 +459,17 @@ function requestHostTimeout(
 
 function handleTimeout(currentTime: number) {
   isHostTimeoutScheduled = false;
-  // 将所有到期的延迟任务移动到 taskQueue 中
+  // !callout[/advanceTimers/] 将所有到期的延迟任务移动到 taskQueue 中
   advanceTimers(currentTime);
 
   if (!isHostCallbackScheduled) {
+    // !mark
     // 延迟后，如果当前存在了立即执行任务，则通过 requestHostCallback 调度
     if (peek(taskQueue) !== null) {
       isHostCallbackScheduled = true;
       requestHostCallback();
     } else {
+      // !mark
       // 否则，继续使用 requestHostTimeout 延后，逻辑和 unstable_scheduleCallback 中的延迟逻辑类似
       const firstTimer = peek(timerQueue);
       if (firstTimer !== null) {
@@ -737,11 +480,8 @@ function handleTimeout(currentTime: number) {
 }
 
 
-/**
- * advanceTimers 做的事很简单：
- * 把 timerQueue 中所有到执行时间的任务移动到 taskQueue 中
- * 并且把排序依据 sortIndex 切换成为 expirationTime
- */
+
+// !callout[/advanceTimers/] advanceTimers 做的事很简单：把 timerQueue 中所有到执行时间的任务移动到 taskQueue 中，并且把排序依据 sortIndex 切换成为 expirationTime
 function advanceTimers(currentTime: number) {
   // Check for tasks that are no longer delayed and add them to the queue.
   let timer = peek(timerQueue);
@@ -778,8 +518,7 @@ function requestHostCallback() {
 }
 
 let schedulePerformWorkUntilDeadline;
-// setImmediate 主要是 node 和 老 IE 环境使用，选择的原因和 MessageChannel 是类似的
-// 不过不同于 MesagcChamnel，它不会阻止 Nodejs 进程退出
+// !callout[/localSetImmediate/] setImmediate 主要是 node 和 老 IE 环境使用，选择的原因和 MessageChannel 是类似的，不过不同于 MesagcChamnel，它不会阻止 Nodejs 进程退出
 if (typeof localSetImmediate === "function") {
   // Node.js and old IE.
   // There's a few reasons for why we prefer setImmediate.
@@ -817,13 +556,13 @@ if (typeof localSetImmediate === "function") {
 
 调度完成后，就来到了真正的执行阶段。代码执行链路是 `performWorkUntilDeadline -> flushWork -> workLoop`。最关键最复杂的逻辑就在 `workLoop` 中。
 
-`workLoop` 和 Demo 示例类似，就是不断把 taskQueue 中的任务取出来执行，只要增加了提前中断和继续调度的场景。
+`workLoop` 和 Demo 示例类似，就是不断把 taskQueue 中的任务取出来执行，只是增加了提前中断和继续调度的场景。
 
 ```js title="react/packages/scheduler/src/forks/Scheduler.js" {5,14,21,40,65,71,82}
 function workLoop(initialTime: number) {
   let currentTime = initialTime;
   advanceTimers(currentTime);
-  // 取最高优的任务，注意是 peek，而不是 pop
+  // !callout[/peek/] 取最高优的任务，注意是 peek，而不是 pop
   currentTask = peek(taskQueue);
   while (
     currentTask !== null &&
@@ -831,28 +570,28 @@ function workLoop(initialTime: number) {
     !(enableSchedulerDebugging && isSchedulerPaused)
   ) {
 
-    // 中断条件：如果当前任务还到过期时间，但是需要让出主线程，那么就提前中断退出
-    // 所以，如果当前任务已经过期了，那么即使判断为需要让出主线程，也不会中断，继续执行任务，以保证已经过期的任务能尽快执行完
+    // !callout[/expirationTime/] 中断条件：如果当前任务还到过期时间，但是需要让出主线程，那么就提前中断退出。所以，如果当前任务已经过期了，那么即使判断为需要让出主线程，也不会中断，继续执行任务，以保证已经过期的任务能尽快执行完
     if (currentTask.expirationTime > currentTime && shouldYieldToHost()) {
       // This currentTask hasn't expired, and we've reached the deadline.
       break;
     }
 
     const callback = currentTask.callback;
-    // 如果任务被取消或者完成了，callback 会被置为 null, 所以在执行前需要判断当前任务是否有效
+    // !callout[/callback/] 如果任务被取消或者完成了，callback 会被置为 null, 所以在执行前需要判断当前任务是否有效
     if (typeof callback === 'function') {
 
-      // 将 callback 先置为 null, 认为该任务会执行完成
+      // !callout[/null/] 将 callback 先置为 null, 认为该任务会执行完成
       currentTask.callback = null;
 
       currentPriorityLevel = currentTask.priorityLevel;
 
-      // 判断当前任务是否已经超时了
+      // !callout[/didUserCallbackTimeout/] 判断当前任务是否已经超时了
       const didUserCallbackTimeout = currentTask.expirationTime <= currentTime;
       if (enableProfiling) {
 
         markTaskRun(currentTask, currentTime);
       }
+      // !mark(1:6)
       // 和 Demo 的不同点:
       //  1. 接收 timeout 作为入参，让调用的任务感知到当前任务是否已经超时，当前任务中的业务逻辑可自行判断是否需要中断任务，
       //     比如 React Reconciler 层就会根据此参数判断 Reconciliation 是否需要中断
@@ -871,8 +610,7 @@ function workLoop(initialTime: number) {
           markTaskYield(currentTask, currentTime);
         }
         advanceTimers(currentTime);
-        // 对于还有继续任务的场景，快速退出，重新调度，这是为了快速让出主线程，影响用户的交互
-        // true 表示还有任务
+        // !callout[/true/] 对于还有继续任务的场景，快速退出，重新调度，这是为了快速让出主线程，影响用户的交互。true 表示还有任务
         return true;
       } else {
         if (enableProfiling) {
@@ -881,26 +619,25 @@ function workLoop(initialTime: number) {
           // $FlowFixMe[incompatible-use] found when upgrading Flow
           currentTask.isQueued = false;
         }
-        // 如果当前任务执行完成了，并且还是最高优的任务（在任务执行中也可能会插入更高优的任务），就把当前任务推出
-        // 如果不是最高优，就不做处理，因为上面已经在任务执行前将 callback 置为 null，并且在 loop 时做了 check 处理
+        // !callout[/currentTask/] 如果当前任务执行完成了，并且还是最高优的任务（在任务执行中也可能会插入更高优的任务），就把当前任务推出。如果不是最高优，就不做处理，因为上面已经在任务执行前将 callback 置为 null，并且在 loop 时做了 check 处理
         if (currentTask === peek(taskQueue)) {
           pop(taskQueue);
         }
         advanceTimers(currentTime);
       }
     } else {
-      // 说明当前任务已经完成或者被取消，直接 pop 掉即可
+      // !callout[/pop/] 说明当前任务已经完成或者被取消，直接 pop 掉即可
       pop(taskQueue);
     }
     currentTask = peek(taskQueue);
   }
-  // 因为 loop 会提前中断，所以需要检测否是还存在任务，存在，返回 true，否则 false。
+  // !callout[/currentTask/] 因为 loop 会提前中断，所以需要检测否是还存在任务，存在，返回 true，否则 false。
   if (currentTask !== null) {
     return true;
   } else {
     const firstTimer = peek(timerQueue);
     if (firstTimer !== null) {
-      // 如果所有立即执行任务已经完成，但还存在延迟任务，那么再次对延迟任务进行调度
+      // !callout[/requestHostTimeout/] 如果所有立即执行任务已经完成，但还存在延迟任务，那么再次对延迟任务进行调度
       requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
     }
     return false;
@@ -917,7 +654,7 @@ function workLoop(initialTime: number) {
 export const frameYieldMs = 5;
 ```
 
-```js title="react/packages/scheduler/src/forks/Scheduler.js" {6}
+```js title="react/packages/scheduler/src/forks/Scheduler.js"
 
 let frameInterval = frameYieldMs;
 
@@ -933,7 +670,7 @@ function shouldYieldToHost(): boolean {
 }
 ```
 
-默认情况下， `shouldYieldToHost` 就是判断是否已经过了 5 ms， 是的话就返回 `true` 表明当前需要让出主线程。
+默认情况下，`shouldYieldToHost` 就是判断是否已经过了 5 ms，是的话就返回 `true` 表明当前需要让出主线程。
 
 所以在 React 项目的性能火焰图中，通常会看到如下的结果（每次宏任务的时长大概在 5ms 左右）：
 
@@ -964,7 +701,7 @@ function forceFrameRate(fps: number) {
 
 `workLoop` 返回 `true` 表示还有任务需要执行，但当前 loop 已经结束，那么就需要再次调度剩余的任务：
 
-```js title="react/packages/scheduler/src/forks/Scheduler.js" {17,21,47,60}
+```js title="react/packages/scheduler/src/forks/Scheduler.js"
 const performWorkUntilDeadline = () => {
   if (isMessageLoopRunning) {
     const currentTime = getCurrentTime();
@@ -980,11 +717,11 @@ const performWorkUntilDeadline = () => {
     // remain true, and we'll continue the work loop.
     let hasMoreWork = true;
     try {
-      // flushWork 返回的就是 workLoop 的结果
+      // !callout[/flushWork/] 返回的就是 workLoop 的结果
       hasMoreWork = flushWork(currentTime);
     } finally {
       if (hasMoreWork) {
-        // 如果还有任务，继续通过 schedulePerformWorkUntilDeadline 调度
+        // !callout[/schedulePerformWorkUntilDeadline/] 如果还有任务，继续通过 schedulePerformWorkUntilDeadline 调度
         schedulePerformWorkUntilDeadline();
       } else {
         isMessageLoopRunning = false;
@@ -999,7 +736,7 @@ function flushWork(initialTime: number) {
   }
 
   isHostCallbackScheduled = false;
-  // workLoop 开始任务执行前， 延时任务的 timer 可以取消掉，因为在任务执行过程中，延时任务队列可能还会变，之前的 timer 已经过时了
+  // !callout[/isHostTimeoutScheduled/] workLoop 开始任务执行前， 延时任务的 timer 可以取消掉，因为在任务执行过程中，延时任务队列可能还会变，之前的 timer 已经过时了
   if (isHostTimeoutScheduled) {
     // We scheduled a timeout but it's no longer needed. Cancel it.
     isHostTimeoutScheduled = false;

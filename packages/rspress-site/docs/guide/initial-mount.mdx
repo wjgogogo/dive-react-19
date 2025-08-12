@@ -439,7 +439,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
 工作循环的核心是 `beginWork` 和 `completeUnitOfWork` 两个函数，它们共同实现了深度优先遍历：
 
 1. `beginWork`：处理当前 Fiber 节点，返回子节点（如果有）
-2. `completeUnitOfWork`：在没有更多子节点时完成节点的处理，然后处理兄弟节点或返回父节点
+2. `completeUnitOfWork`：在没有更多子节点时完成节点处理，然后处理兄弟节点或返回父节点
 
 对于不同类型的组件，`beginWork` 会调用不同的处理函数：
 

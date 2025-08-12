@@ -21,13 +21,15 @@ export const callout: AnnotationHandler = {
         {children}
         <div
           style={{ minWidth: `${column + 4}ch` }}
-          className="bg-card text-card-foreground relative mt-2 w-fit max-w-md rounded-md border p-1.5 text-sm whitespace-pre-wrap shadow-sm"
+          className="relative mt-2 w-fit max-w-md rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50/80 to-blue-50/60 p-3 text-sm whitespace-pre-wrap shadow-md backdrop-blur-md dark:border-slate-600/30 dark:from-slate-800/40 dark:to-slate-700/30"
         >
           <div
             style={{ left: `${column}ch` }}
-            className="bg-card border-border absolute -top-px h-2 w-2 -translate-y-1/2 rotate-45 border-t border-l"
+            className="absolute -top-px h-2 w-2 -translate-y-1/2 rotate-45 border-t border-l border-slate-200/60 bg-gradient-to-br from-slate-50/80 to-blue-50/60 backdrop-blur-md dark:border-slate-600/30 dark:from-slate-800/40 dark:to-slate-700/30"
           />
-          <div className="flex items-start">{annotation.query}</div>
+          <div className="flex items-start text-slate-700/90 dark:text-slate-200/90">
+            {annotation.query}
+          </div>
         </div>
       </>
     );

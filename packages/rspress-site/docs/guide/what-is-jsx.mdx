@@ -1,6 +1,6 @@
 # 什么是 JSX ？
 
-我们使用 React 时最大的感受是它让可以用一种更直观、更声明式的方式来描述用户界面，即 JSX。JSX 的语法类似于 HTML，但它并不是 HTML，而是 JavaScript 的一种语法扩展。
+我们使用 React 时最大的感受是它让我们能够用一种更直观、更声明式的方式来描述用户界面，即 JSX。JSX 的语法类似于 HTML，但它并不是 HTML，而是 JavaScript 的一种语法扩展。
 
 ## JSX 的本质
 
@@ -9,7 +9,6 @@
 - Babel
 
 ```json
-// 使用 @babel/preset-react 预设
 {
   "presets": ["@babel/preset-react"]
 }
@@ -17,8 +16,7 @@
 
 - TypeScript
 
-```json
-// tsconfig.json
+```json title="tsconfig.json"
 {
   "compilerOptions": {
     "jsx": "react"
@@ -39,8 +37,7 @@ esbuild.build({
 
 - SWC (Speedy Web Compiler)：用 Rust 编写的快速 JavaScript/TypeScript 编译器，支持 JSX 转换
 
-```json
-// .swcrc
+```json title=".swcrc"
 {
   "jsc": {
     "parser": {
@@ -77,7 +74,7 @@ esbuild.build({
 - `automatic`：自动选择 runtime
 - `classic`：经典 runtime
 
-目前来说，`automatic` 是主流的 runtime，无需手动引入 `React`。
+目前来说，`automatic` 是主流 runtime，无需手动引入 `React`。
 
 以如下的代码为例：
 
@@ -98,7 +95,8 @@ function App() {
 
 会被转换为：
 
-```js {4-6,9-14,16-18}
+```js
+// !mark(4:6,9:14,16:18)
 // 自动引入 jsx 和 jsxs 函数
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 function Child() {
@@ -120,7 +118,7 @@ function App() {
 }
 ```
 
-而采用的 `classic` runtime，还必须手动引入 `React`，否则会报错。
+而采用 `classic` runtime，还必须手动引入 `React`，否则会报错。
 
 ```jsx
 import React from "react";
@@ -128,7 +126,8 @@ import React from "react";
 
 转换结果如下：
 
-```jsx {3,6-14,16-22}
+```jsx
+// !mark(3,6:14,16:22)
 // 与 automatic 的区别，需要引入 React，否则 React.createElement 会报错
 function Child() {
   return /*#__PURE__*/ React.createElement("div", null, "Child");
@@ -162,6 +161,7 @@ function App() {
     [
       "@babel/preset-react",
       {
+        // !focus
         "development": true,
         "runtime": "automatic"
       }
@@ -172,7 +172,8 @@ function App() {
 
 代码转换结果如下：
 
-```js {4-17,20-36,38-66}
+```js
+// !mark(4:17,20:36,38:66)
 var _jsxFileName = "xxx.jsx";
 import { jsxDEV as _jsxDEV } from "react/jsx-dev-runtime";
 function Child() {
@@ -244,9 +245,9 @@ function App() {
 
 > [babel playground](https://babeljs.io/repl#?browsers=defaults%2C%20not%20ie%2011%2C%20not%20ie_mob%2011&build=&builtIns=false&corejs=3.21&spec=false&loose=false&code_lz=GYVwdgxgLglg9mABAYQBYwDYBMAUBKRAbwChFEAnAUyhHKQB4sYA3APjUy3oHom2BuYgF9ixUJFgJEAQQAOs_EVKIICAM5RElDJQC2lMJoC8ieqgCMiDQE8dRwoRVwMccgC5EAIipZPiIUKsABLaLgA0iADurtgAhDwWrIJkqmBqzpQAdC4A5jiegLwbgAF7iAB-Wjr6hm6eEdp6BlB4yRTUtEg4ymSMLKxdZET1VVBCphzYiNx9A6a8vcrNwkA&debug=false&forceAllTransforms=false&modules=false&shippedProposals=false&evaluate=false&fileSize=false&timeTravel=false&sourceType=module&lineWrap=true&presets=env%2Creact%2Cstage-2&prettier=true&targets=&version=7.25.8&externalPlugins=&assumptions=%7B%7D)
 
-无论是 `automatic` 还是 `classic`。本质都是将 JSX 转换成为函数调用，而函数执行后最终会返回一个 `ReactElement` 的数据结构。
+无论是 `automatic` 还是 `classic`，本质都是将 JSX 转换成函数调用，而函数执行后最终会返回一个 `ReactElement` 数据结构。
 
-比如上面的 `element` 就是 `ReactElement` 的数据结构，大概长这样：
+比如上面的 `element` 就是 `ReactElement` 数据结构，大概长这样：
 
 ![](/react-element.png)
 
@@ -289,7 +290,7 @@ function jsx(type, props, key) {
 
 #### runtime 为 `automatic`
 
-在开发模式下，即：使用 `@babel/plugin-transform-react-jsx-development`。会将绝大部分 JSX 转换为 `jsxDEV` 函数调用。
+在开发模式下，即：使用 `@babel/plugin-transform-react-jsx-development`，会将绝大部分 JSX 转换为 `jsxDEV` 函数调用。
 
 ```js
 function App() {
@@ -302,7 +303,7 @@ function App() {
 ```
 
 ```js
-// 自动引入 jsxDEV 函数
+// !callout[/jsxDEV/] 自动引入 jsxDEV 函数
 import { jsxDEV as _jsxDEV } from "react/jsx-dev-runtime";
 
 const element = /*#__PURE__*/ _jsxDEV(
@@ -350,9 +351,9 @@ type jsxDEV = (
 
 - 字符串：表示原生 DOM 组件，如 `div`
 - 函数：表示类、函数组件
-- Symbol(或者特殊字符串 polyfill，主要针对React 内置组件)：如 `Fragment`，`StrictMode` 等
+- Symbol（或者特殊字符串 polyfill，主要针对 React 内置组件）：如 `Fragment`、`StrictMode` 等
 
-Babel 会根据 `type` 的类型，选择不同的转换逻辑。如果是原生标签（以小写开头的字符串），会转换为 `string` 类型，否则保持原样。
+Babel 会根据 `type` 类型，选择不同的转换逻辑。如果是原生标签（以小写开头的字符串），会转换为 `string` 类型，否则保持原样。
 
 ```js
 function App() {
@@ -405,7 +406,7 @@ function App() {
 这也是为什么 React 希望组件名**以大写字母开头**，因为这样可以避免与原生标签混淆而导致 Babel 转换错误。
 :::
 
-`config` 对象，即：对应 props 属性，会将除了 `key` 之外的所有属性收敛到其中，包含 `children` 属性（_`children` 在以前的版本中会解析为 `jsxDev` 单独的参数_ ）。
+`config` 对象，即对应 props 属性，会将除了 `key` 之外的所有属性收敛到其中，包含 `children` 属性（_`children` 在以前的版本中会解析为 `jsxDev` 单独的参数_）。
 
 ```js
 const element = (
@@ -425,7 +426,8 @@ const element = /*#__PURE__*/ _jsxDEV(
     other: other,
     children: "title"
   },
-  "key", // key 会被单独提出来，便于提高后续 React 解析性能
+  // !callout[/key/]  key 会被单独提出来，便于提高后续 React 解析性能
+  "key",
   false,
   {
     fileName: _jsxFileName,
@@ -640,7 +642,7 @@ const dynamicChildren = /*#__PURE__*/ _jsxDEV(
 现阶段，Babel 主要是从 `children` 的个数来判断是否为静态。
 :::
 
-在生产模式下，即使用 `@babel/plugin-transform-react-jsx`。会将绝大部分 JSX 转换为 `jsx` 或者 `jsxs` 函数调用。
+在生产模式下，即使用 `@babel/plugin-transform-react-jsx`，会将绝大部分 JSX 转换为 `jsx` 或者 `jsxs` 函数调用。
 
 类型如下：
 
@@ -835,7 +837,7 @@ function App() {
         columnNumber: 5
       }
     }),
-    // 从第三个参数开始，后续的入参都会被视为是 children 的一项
+    // !callout[/element/] 从第三个参数开始，后续的入参都会被视为是 children 的一项
     element,
     " ",
     /*#__PURE__*/ React.createElement(Child, {
@@ -893,7 +895,7 @@ function App() {
     _extends({}, props, {
       key: "key"
     }),
-    // 从第三个参数开始，后续的入参都会被视为是 children 的一项
+    // !callout[/element/] 从第三个参数开始，后续的入参都会被视为是 children 的一项
     element,
     " ",
     /*#__PURE__*/ React.createElement(Child, null)
@@ -968,8 +970,9 @@ function jsxDEVImpl(
      * 🚧 省略掉对 type，children key 的检查和警告 🚧
      */
 
+    // !mark
     // 现阶段，依旧会从 config 中获取 key 值，但是为下一阶段做准备，会警告 key 使用不当
-
+    // !className(1:26) border-2! border-blue-300! rounded-sm
     // Warn about key spread regardless of whether the type is valid.
     if (hasOwnProperty.call(config, "key")) {
       const componentName = getComponentNameFromType(type);
@@ -999,6 +1002,7 @@ function jsxDEVImpl(
 
     let key = null;
 
+    // !mark
     // 下面注释提到了对 <div {...props} key="Hi" or <div key="Hi" {...props} /> 两种情况的处理还有点问题
 
     // Currently, key can be spread in as a prop. This causes a potential
@@ -1023,6 +1027,7 @@ function jsxDEVImpl(
 
     let props;
     if (!("key" in config)) {
+      // !mark
       // 性能优化措施，尽可能重用原始的 props 对象
 
       // If key was not spread in, we can reuse the original props object. This
@@ -1042,15 +1047,16 @@ function jsxDEVImpl(
       props = {};
       for (const propName in config) {
         // Skip over reserved prop names
-        // 不会对 ref 做特殊处理，所以 ref 不会再作为保留属性，而是会保留在 props 中
+        // !callout[/\(.*\)/] 不会对 ref 做特殊处理，所以 ref 不会再作为保留属性，而是会保留在 props 中
         if (propName !== "key") {
           props[propName] = config[propName];
         }
       }
     }
 
-    // 在 19 中，disableDefaultPropsExceptForClasses 为 true
-    // 所以不会再将 defaultProps 合并到 props 中
+    
+    // !collapse(1:11) collapsed
+    // !callout[/disableDefaultPropsExceptForClasses/] 在 19 中，disableDefaultPropsExceptForClasses 为 true, 所以不会再将 defaultProps 合并到 props 中
     if (!disableDefaultPropsExceptForClasses) {
       // Resolve default props
       if (type && type.defaultProps) {
@@ -1063,7 +1069,7 @@ function jsxDEVImpl(
       }
     }
 
-    // 对从 props 中获取的 key 做特殊处理，添加开发环境警告
+    // !callout[/key/] 对从 props 中获取的 key 做特殊处理，添加开发环境警告
     if (key) {
       const displayName =
         typeof type === "function"
@@ -1072,7 +1078,7 @@ function jsxDEVImpl(
       defineKeyPropWarningGetter(props, displayName);
     }
 
-    // 最后调用 ReactElement 函数创建 React 元素
+    // !callout[/ReactElement/] 最后调用 ReactElement 函数创建 React 元素
     return ReactElement(
       type,
       key,
@@ -1109,6 +1115,7 @@ function ReactElement(
   // backwards compatibility.
   const ref = refProp !== undefined ? refProp : null;
 
+  // !mark
   // 分不同的情况构建 element，主要区别在于 ref 的处理
   let element;
   if (__DEV__) {
@@ -1130,7 +1137,7 @@ function ReactElement(
       // Record the component responsible for creating this element.
       _owner: owner
     };
-    // 对 ref 做特殊处理，添加开发环境警告
+    // !callout[/ref/] 对 ref 做特殊处理，添加开发环境警告
     if (ref !== null) {
       Object.defineProperty(element, "ref", {
         enumerable: false,
@@ -1178,11 +1185,11 @@ function ReactElement(
 }
 ```
 
-经过上面的流程，函数`jsxDEV` 将编译后 JSX 对象转换为 ReactElement 元素，这个元素是 React 内部用于描述组件树的节点，作为 React 渲染和更新机制的输入。
+经过上面的流程，函数 `jsxDEV` 将编译后 JSX 对象转换为 ReactElement 元素，这个元素是 React 内部用于描述组件树的节点，作为 React 渲染和更新机制的输入。
 
 ##### 性能提升
 
-Babel 会将 JSX 的 props 使用一个新的对象来承载，_在以前的版本中，`jsxDEV` 总是会创建一个新的对象，用于承载剔除掉 `ref`，`key`等保留属性_，**而现在，会尽可能重用这个对象，以减少内存分配和垃圾回收的负担**。
+Babel 会将 JSX 的 props 使用一个新对象来承载，_在以前的版本中，`jsxDEV` 总是会创建一个新的对象，用于承载剔除掉 `ref`、`key` 等保留属性_，**而现在，会尽可能重用这个对象，以减少内存分配和垃圾回收的负担**。
 
 :::details 性能问题
 ![](/jsx-performance-issue.png)
@@ -1191,10 +1198,10 @@ Babel 会将 JSX 的 props 使用一个新的对象来承载，_在以前的版�
 
 :::
 
-生产模式下的 `jsx` & `jsxs` 函数本质就是`jsxProd` 函数，即 `jsxDEV` 函数去除了校验逻辑的版本，不再赘述。
+生产模式下的 `jsx` & `jsxs` 函数本质就是 `jsxProd` 函数，即 `jsxDEV` 函数去除了校验逻辑的版本，不再赘述。
 
 :::tip
-ReactElement 元素 和 Fiber 节点是不同的，后文会详解介绍 Fiber 节点，注意不要混淆。
+ReactElement 元素和 Fiber 节点是不同的，后文会详解介绍 Fiber 节点，注意不要混淆。
 :::
 
 #### createElement 函数
@@ -1216,9 +1223,10 @@ export function createElement(type, config, children) {
 
   let key = null;
 
-  // config 中包含除 children 的所有 props，包含 key，ref
+  // !callout[/config/] config 中包含除 children 的所有 props，包含 key，ref
   if (config != null) {
     if (__DEV__) {
+      // !mark
       // 对旧的 JSX 转换做警告
       if (
         !didWarnAboutOldJSXRuntime &&
@@ -1246,8 +1254,8 @@ export function createElement(type, config, children) {
       key = "" + config.key;
     }
 
+    // !mark
     // 将 config 中除 key 之外的属性添加到 props 对象中，由于每次都会构建新的 props 对象，性能会差点
-
     // Remaining properties are added to a new props object
     for (propName in config) {
       if (
@@ -1266,8 +1274,8 @@ export function createElement(type, config, children) {
     }
   }
 
+  // !mark
   // 从第三个参数开始，后续的入参都会被视为是 children 的一项，将其收敛到 props 属性中
-
   // Children can be more than one argument, and those are transferred onto
   // the newly allocated props object.
   const childrenLength = arguments.length - 2;
@@ -1286,8 +1294,8 @@ export function createElement(type, config, children) {
     props.children = childArray;
   }
 
+  // !mark
   // 与 jsxDEV 不同的是，少了特性开关，所以组件的 defaultProps，总是会被合并到 props 中
-
   // Resolve default props
   if (type && type.defaultProps) {
     const defaultProps = type.defaultProps;
