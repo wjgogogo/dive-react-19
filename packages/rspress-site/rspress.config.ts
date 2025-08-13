@@ -73,25 +73,27 @@ export default defineConfig({
     remarkPlugins: [
       [
         remarkCodeHike,
+        /** @type {import('codehike/mdx').CodeHikeConfig} */
         {
           components: {
             code: "Coder"
-          }
+          },
+          ignoreCode: (codeblock) => codeblock.lang === "mermaid"
         }
       ]
     ]
   },
-  // plugins: [
-  //   pluginShiki(),
-  //   pluginPreview({
-  //     defaultRenderMode: "pure",
-  //     iframeOptions: {
-  //       position: "fixed",
-  //       devPort: 8001
-  //     }
-  //   }),
-  //   pluginMermaid()
-  // ],
+  plugins: [
+    // pluginShiki(),
+    // pluginPreview({
+    //   defaultRenderMode: "pure",
+    //   iframeOptions: {
+    //     position: "fixed",
+    //     devPort: 8001
+    //   }
+    // }),
+    pluginMermaid()
+  ],
   builderConfig: {
     tools: {
       rspack: (config) => {
