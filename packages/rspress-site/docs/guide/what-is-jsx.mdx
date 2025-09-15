@@ -1,5 +1,7 @@
 # 什么是 JSX ？
 
+> 快速结论：JSX 是语法扩展，需经编译器转换为函数调用（automatic: `jsx/jsxs/jsxDEV`；classic: `React.createElement`），最终产出 `ReactElement`。React 19 起，`key` 与其他 props 分离、函数组件不再支持 `defaultProps`，`ref` 行为调整为更显式且开发期具备告警能力。
+
 我们使用 React 时最大的感受是它让我们能够用一种更直观、更声明式的方式来描述用户界面，即 JSX。JSX 的语法类似于 HTML，但它并不是 HTML，而是 JavaScript 的一种语法扩展。
 
 ## JSX 的本质
@@ -56,7 +58,7 @@ esbuild.build({
 
 ### Babel Transform
 
-本节以 Babel 为准，其他编译器处理方式类似。
+本节以 Babel 为准（SWC/ESBuild/TS 配置思路一致）。
 
 :::info
 
@@ -74,7 +76,7 @@ esbuild.build({
 - `automatic`：自动选择 runtime
 - `classic`：经典 runtime
 
-目前来说，`automatic` 是主流 runtime，无需手动引入 `React`。
+目前 `automatic` 是主流 runtime，无需手动引入 `React`。
 
 以如下的代码为例：
 
@@ -473,7 +475,7 @@ const element = /*#__PURE__*/ _jsxDEV(
 ```
 
 :::info
-现阶段，React 会在运行时依旧从 `config` 中解析 `key` 属性，但是会抛出 warning 信息，提示 `key` 应该被单独指定出来。下一步（_不能确定什么时候_）会停止从 `config` 中解析 `key`
+现阶段 React 仍会在运行时从 `config` 再解析一次 `key`，并抛出 warning 提示应将 `key` 单独指定。未来可能完全停止从 `config` 解析 `key`。
 :::
 
 现阶段还有一个问题：
@@ -513,9 +515,7 @@ const element = /*#__PURE__*/ _createElement(
 Babel 会使用 `React.createElement` 来代替 `jsxDEV` 函数。
 
 :::note
-对这样的处理，笔者也有点疑惑。按理说，相比较于`<div key="Hi" {...props} />`, `<div {...props} key="Hi" />` 更应该解析为`jsxDEV("div",config,"key")`。
-
-**Babel 的对此的编译行为未来可能会有所改变**，在此之前，将 `key` 放在前面，避免解析为 `React.createElement`，能获得更好性能。
+实践建议：将 `key` 放在展开属性之前（如 `<div key="Hi" {...props} />`），避免被编译为 `React.createElement`，通常可获得更好性能。Babel 的行为未来可能调整。
 :::
 
 `isStatic` 用于标记 `children` 是否为静态。静态意味着 `children` 存在，且**数量**是固定的。比如：
@@ -903,7 +903,7 @@ function App() {
 }
 ```
 
-开发模式相比于生产模式，也仅仅多了一些调试信息，比如 `config.__self`, `config.__source`。
+开发模式相比生产模式，会额外注入调试信息（如 `config.__self`、`config.__source`）。
 
 ### React 对 JSX 转换函数的逻辑升级
 
@@ -1336,3 +1336,10 @@ export function createElement(type, config, children) {
 >
 > - [RFC: createElement changes and surrounding deprecations](https://github.com/reactjs/rfcs/pull/107)
 > - [create-element-changes](https://github.com/reactjs/rfcs/blob/createlement-rfc/text/0000-create-element-changes.md)
+
+## 小结
+
+- JSX 本质是编译期语法糖，产出 `ReactElement`。
+- automatic 下使用 `jsx/jsxs/jsxDEV`，classic 使用 `React.createElement`。
+- 开发模式注入 `__source`/`__self` 等调试信息；生产模式剔除。
+- React 19 对 `key/ref/defaultProps` 行为做了更一致、更高性能的调整。

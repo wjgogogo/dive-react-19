@@ -1,5 +1,12 @@
 # 应用初次挂载概览
 
+> 快速结论：初次挂载由“创建根 → 触发渲染 → 调度 → 构建 Fiber → 完成阶段 → 提交阶段”串联完成，React 19 默认并发渲染（ConcurrentRoot），提交阶段分 Before Mutation / Mutation / Layout 三步。
+
+:::tip 前置阅读
+- 如何本地调试源码：见《如何调试 React 源码？》；快速启动：`pnpm install && pnpm react:dev`
+- 并发调度背景：见《Scheduler 调度器》
+:::
+
 在 React 19 中，应用的初次挂载是指将 React 组件树首次渲染到 DOM 中的过程。这是 React 应用生命周期的起点，也是理解 React 内部工作机制的基础。本文将深入分析 React 19 的初次挂载流程，揭示其内部实现细节。
 
 ## React 19 渲染架构概述
@@ -10,7 +17,7 @@ React 19 的渲染架构主要包含三个核心部分：
 2. **Reconciler（协调器）**：实现 Fiber 架构，负责调度和协调更新
 3. **Renderer（渲染器）**：负责将变更应用到不同平台（如 DOM、Native 等）
 
-初次挂载流程涉及这三个部分的紧密协作，形成一个从组件到实际 UI 的转化过程。
+初次挂载流程涉及这三个部分的紧密协作，形成从组件到实际 UI 的转化过程。
 
 ## 初次挂载的关键阶段
 
@@ -138,7 +145,7 @@ React 19 的初次挂载可以分为以下关键阶段：
 4. **完成阶段**：准备 DOM 操作
 5. **提交阶段**：执行 DOM 更新并触发副作用
 
-下面我们逐一深入分析这些阶段。
+下面按链路逐一展开，并在每节末给出要点回顾。
 
 ## 创建 Root：应用的起点
 
@@ -240,7 +247,7 @@ root.current = uninitializedFiber;
 uninitializedFiber.stateNode = root;
 ```
 
-这里建立了 FiberRoot 和 RootFiber 之间的相互引用，形成了 React 应用的基础结构。
+这里建立了 FiberRoot 和 RootFiber 的相互引用，形成应用的基础结构。
 
 ## 渲染入口：处理初次渲染请求
 
@@ -282,7 +289,7 @@ export function updateContainer(
 }
 ```
 
-其中，`requestUpdateLane` 函数为更新分配优先级（Lane），这是 React 19 并发模式的核心特性。
+其中，`requestUpdateLane` 为更新分配优先级（Lane），这是 React 19 并发模式的核心。
 
 `updateContainerImpl` 函数创建更新对象并加入更新队列：
 

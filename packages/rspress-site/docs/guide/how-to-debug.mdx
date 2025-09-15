@@ -1,5 +1,11 @@
 # 如何调试 React 源码？
 
+## 准备工作
+
+- Node.js ≥ 18，建议使用 LTS 版本。
+- 包管理器使用 pnpm（已在仓库配置）。
+- 可选：VSCode（便于断点与浏览器调试）。
+
 ## 最简单的方式
 
 克隆本仓库：
@@ -20,11 +26,17 @@ pnpm install
 pnpm react:dev
 ```
 
-还可以继续在 `packages/react-dojo/dojo/index.jsx` 文件中编写调试代码。
+也可以在 `packages/react-dojo/dojo/index.jsx` 中追加/修改用例进行验证。
+
+一条命令快速启动：
+
+```bash
+pnpm install && pnpm react:dev
+```
 
 ![](/debug.png)
 
-如果使用 VSCode 编辑器，在启动项目后，可直接在**运行和调试**面板中选择`启动 react debug`，就可以使用 VSCode 断点调试 React 源码。
+若使用 VSCode，在启动项目后到「运行和调试」面板选择「启动 react debug」即可对源码断点调试（已在 .vscode/launch.json 配置）。
 
 ![](/debug-vscode.png)
 
@@ -34,7 +46,7 @@ pnpm react:dev
 
 ## 使用 Webpack 调试 React 源码
 
-如果你想调试 React 最新版代码，实时跟踪 React 进展，也可以采用和本仓库类似的方式，关键步骤如下。
+如果你想调试 React 最新版代码，实时跟踪 React 进展，也可以采用与本仓库相同的思路搭建最小可复现环境。关键步骤如下。
 
 新建项目，假设项目名为 `react-debug`。
 
@@ -61,7 +73,7 @@ react-debug
 ├── package.json
 ```
 
-`package.json` 配置如下：
+`package.json` 配置如下（版本与本仓库保持一致或取其同等兼容范围）：
 
 ```json
 {
@@ -85,7 +97,7 @@ react-debug
 }
 ```
 
-`webpack.config.js` 配置如下：
+`webpack.config.js` 配置如下（通过 alias 将 `react/*` 映射到源码包目录；并定义 React 源码中使用的全局常量）：
 
 ```js
 const path = require("path");
@@ -158,7 +170,7 @@ module.exports = {
       "process.env.NODE_ENV": JSON.stringify("development"),
       // !mark(1:3)
       __DEV__: true, // 用于区分开发环境和生成环境
-      __EXPERIMENTAL__: true, // 用于控制实验性功能的开关，实验性功能通常是下一个开发版本的具有破坏性的功能
+      __EXPERIMENTAL__: false, // 若需体验实验特性，可改为 true（可能引入不稳定改动）
       __PROFILE__: false // 是 React 源码中用于性能分析的全局标志，主要用于控制与性能分析相关的功能是否启用
     })
   ],
@@ -195,7 +207,7 @@ module.exports = {
 
 ### 源码修改
 
-React 在编译时才会提供 renderer，可以直接跳过 React 脚本行为，因为本文只关注 CSR，所以写死为 `ReactFiberConfig.dom`：
+React 在编译时才会提供 renderer。为聚焦 CSR，可跳过脚本分发逻辑，直接指向 `ReactFiberConfig.dom`：
 
 ```js title="react/packages/react-reconciler/src/ReactFiberConfig.js"
 // We expect that our Rollup, Jest, and Flow configurations
@@ -212,7 +224,7 @@ React 在编译时才会提供 renderer，可以直接跳过 React 脚本行为�
 export * from "./forks/ReactFiberConfig.dom";
 ```
 
-`log` 和 `unstable_setDisableYieldValue` 函数在测试环境中才会存在，这里直接设置为空：
+`log` 和 `unstable_setDisableYieldValue` 函数仅在测试环境存在，这里置为空避免引用错误：
 
 ```js title="react/packages/react-reconciler/src/Scheduler.js"
 // this doesn't actually exist on the scheduler, but it *does*
@@ -227,7 +239,7 @@ export const log = () => {};
 export const unstable_setDisableYieldValue = () => {};
 ```
 
-React 使用 `ReactSharedInternals` 来共享内部功能和状态，并且 Client 和 Server 各自一套状态，这里也直接写死为 Client 对应的版本：
+React 使用 `ReactSharedInternals` 共享内部功能与状态，Client/Server 各有实现，这里固定为 Client 版本：
 
 ```js title="react/packages/shared/ReactSharedInternals.js"
 // !diff -
@@ -240,7 +252,7 @@ import ReactSharedInternals from "../react/src/ReactSharedInternalsClient";
 export default ReactSharedInternals;
 ```
 
-解决一下 flow 语法编译错误问题：
+解决 Flow 语法声明导致的编译错误：
 
 ```js title="react/packages/react-reconciler/src/ReactFiberDevToolsHook.js"
 // !callout[/const/] 将这一行的 const 关键字改成 var
@@ -260,5 +272,5 @@ pnpm dev # or npm run dev
 ![](/dev.png)
 
 :::info
-React 最新源码会不断变化，即使完成了上述的操作，也不能保证执行一定成功，请根据报错信息再进一步更正。
+React 最新源码变动频繁，即使完成上述操作也不保证一次通过。请根据报错栈定位对应源码位置进行小步修正。
 :::

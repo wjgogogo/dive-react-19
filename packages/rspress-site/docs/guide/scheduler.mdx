@@ -7,14 +7,20 @@ import V2Demo from "../../examples/mini-scheduler-v2.tsx";
 
 # Scheduler 调度器
 
+> 快速结论：Scheduler 维护 `taskQueue`（立即任务）与 `timerQueue`（延迟任务）两个小顶堆，依据 `startTime/expirationTime` 排序；以 `MessageChannel` 为主、`setImmediate`/`setTimeout` 为降级的宏任务驱动，在每个时间片内执行并在约 5ms 时让出主线程。
+
+:::tip 前置阅读
+建议先阅读《如何调试 React 源码？》以熟悉运行环境与断点方式。
+:::
+
 <Diagram data={heap} />
 
-Scheduler（调度器）负责管理任务的调度和优先级。定义了任务调度的逻辑，包括任务的优先级、任务队列的管理等。是 React 的核心组件。
+Scheduler（调度器）负责任务优先级、队列与切片执行策略。React 将其作为独立包以提升通用性与可复用性。
 
 React 并没有将本身的任务优先级调度和 Scheduler 耦合在一起，为了保证其通用性，Scheduler 是作为一个独立的包存在。可以直接安装 [Scheduler](https://www.npmjs.com/package/scheduler) 包来使用。
 
 :::tip
-了解事件循环 EventLoop 能更好掌握本章内容，可参考笔者以前写的[消息队列与事件循环](https://mp.weixin.qq.com/s/vzR6Ya4MVQJNijPodhBLww)
+了解事件循环 EventLoop 能更好掌握本章内容，可参考笔者以前写的[消息队列与事件循环](https://mp.weixin.qq.com/s/vzR6Ya4MVQJNijPodhBLww)。
 :::
 
 ## 举一个例子
@@ -80,7 +86,7 @@ function peek() {
 1. `schedule` 任务后，就立即开始了 loop 执行（即使同时插入底优，高优任务，也会先执行底优任务），实际需要延后执行
 2. 单纯按照 `priority` 排序，如果期间不断有高优任务插入，低优任务就会一直被阻塞，而被"饿死"
 
-针对这两点，v2 改进的流程示意图如下:
+针对这两点，v2 改进的流程示意图如下：
 
 <Diagram data={v2} height={600} />
 
@@ -417,7 +423,7 @@ function compare(a: Node, b: Node) {
 
 ### 宏任务的选择
 
-浏览器会在宏任务的间隙执行 Layout，Paint，响应用户的交互。而微任务（比如 `Promise`，`queueMicrotask` ） 是在当前宏任务结束之前执行，会阻塞用户的交互。
+浏览器会在宏任务的间隙执行 Layout、Paint 并响应交互；而微任务（如 `Promise`、`queueMicrotask`）在当前宏任务结束前执行，可能阻塞交互。
 
 延迟任务的目的除了延迟批量执行 task 外，还希望不要阻塞当前用户的交互行为。所以延迟调度的最好选择是通过宏任务调度，并且希望执行时机越早越好，且调用频次足够的高，以保证任务尽快执行。
 
@@ -438,7 +444,7 @@ scheduleTimeout();
 ![](/set-timeout.jpg)
 
 - 按照 60 fps 流畅帧率计算，一帧大概只有 16.67 ms(1000/60)，再减去页面渲染所需时间，留给开发者的时间就很少了，如果使用 `setTimeout` 会浪费宝贵的执行时间。
-- `requestIdleCalback` 初衷是：能够在 EventLoop 中执行低优先级任务，减少对动画，交互等高优任务的影响。所以它主要用来调度底优任务，且调用频率不可控，而 `Scheduler` 需要调度各种优先级的任务。
+- `requestIdleCallback` 初衷是：能够在 EventLoop 中执行低优先级任务，减少对动画/交互等高优任务的影响。它调用频率不可控，只适合底优任务；而 `Scheduler` 需要统一调度各优先级，因此不适用。
 - `requestAnimationFrame` 执行时机是在下一次 Paint 之前，一般用于更新动画。调用频率是一帧一次，频率很低。
 
 所以综合来看，只有 `MessageChannel` 满足一帧内可以多次调用，且执行时机足够早，不存在最小时延。
@@ -507,7 +513,7 @@ function advanceTimers(currentTime: number) {
 }
 ```
 
-不管是延迟任务，还是立即执行任务，最终的调度都会走到 `requestHostCallback`，`requesHostCallback` 本质就是 `setImmediate -> MessageChannel -> setTimeout` 的降级调用：
+不管是延迟任务，还是立即执行任务，最终的调度都会走到 `requestHostCallback`；`requestHostCallback` 本质就是 `setImmediate -> MessageChannel -> setTimeout` 的降级调用：
 
 ```js title="react/packages/scheduler/src/forks/Scheduler.js" {24,33,39}
 function requestHostCallback() {
@@ -518,7 +524,7 @@ function requestHostCallback() {
 }
 
 let schedulePerformWorkUntilDeadline;
-// !callout[/localSetImmediate/] setImmediate 主要是 node 和 老 IE 环境使用，选择的原因和 MessageChannel 是类似的，不过不同于 MesagcChamnel，它不会阻止 Nodejs 进程退出
+// !callout[/localSetImmediate/] setImmediate 主要用于 Node 与老 IE；与 MessageChannel 选择原因类似，但不同于 MessageChannel，它不会阻止 Node 进程退出
 if (typeof localSetImmediate === "function") {
   // Node.js and old IE.
   // There's a few reasons for why we prefer setImmediate.
@@ -776,3 +782,10 @@ function flushWork(initialTime: number) {
 ```
 
 至此，就是 `Scheduler` 主链路的流程。
+
+## 小结
+
+- 双队列：`taskQueue`（按 `expirationTime`）与 `timerQueue`（按 `startTime`），均用小顶堆实现。
+- 宏任务驱动：优先 `MessageChannel`，降级 `setImmediate`/`setTimeout`；避免最小时延与交互阻塞。
+- 时间片让出：默认约 5ms 触发 `shouldYieldToHost`，可用 `forceFrameRate` 调整。
+- 续作机制：任务可返回 `continuationCallback` 继续分片执行，保障流畅度与吞吐量。
