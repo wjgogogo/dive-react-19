@@ -41,7 +41,7 @@ pnpm install && pnpm react:dev
 ![](/debug-vscode.png)
 
 :::tip
-本仓库使用的是 React v19.0.0 版本，对应的 tag 为 [v19.0.0](https://github.com/facebook/react/tree/v19.0.0)。
+本仓库使用的是 React v19.2.0 版本，对应的 tag 为 [v19.2.0](https://github.com/facebook/react/tree/v19.2.0)。
 :::
 
 ## 使用 Webpack 调试 React 源码
@@ -55,7 +55,7 @@ pnpm install && pnpm react:dev
 在 `react-debug` 项目根目录下，执行命令获取 React 最新版代码：
 
 ```bash
-git clone https://github.com/facebook/react.git --branch v19.0.0 --depth 1
+git clone https://github.com/facebook/react.git --branch v19.2.0 --depth 1
 ```
 
 ### webpack 配置
@@ -141,7 +141,15 @@ module.exports = {
         loader: "babel-loader",
         options: {
           presets: [
-            "@babel/preset-env",
+            [
+              "@babel/preset-env",
+              {
+                // 针对现代浏览器，减少不必要的转换
+                targets: {
+                  browsers: ["last 2 Chrome versions"]
+                }
+              }
+            ],
             [
               "@babel/preset-react",
               {
@@ -252,16 +260,37 @@ import ReactSharedInternals from "../react/src/ReactSharedInternalsClient";
 export default ReactSharedInternals;
 ```
 
-解决 Flow 语法声明导致的编译错误：
+### 处理 Flow 语法兼容性
+
+React 19.2.0 源码使用了新的 Flow 语法特性（如 `component()` 类型），当前 @babel/parser 暂不支持。需要做以下处理：
+
+**1. 修改 ReactFiberDevToolsHook.js**
 
 ```js title="react/packages/react-reconciler/src/ReactFiberDevToolsHook.js"
-// !callout[/const/] 将这一行的 const 关键字改成 var
-// !diff -
-// declare const __REACT_DEVTOOLS_GLOBAL_HOOK__: Object | void;
-
-// !diff +
+// 将 const 改为 var
 declare var __REACT_DEVTOOLS_GLOBAL_HOOK__: Object | void;
 ```
+
+**2. 修改 isArray.js**
+
+```js title="react/packages/shared/isArray.js"
+// 注释掉不支持的类型谓词语法
+// declare function isArray<T>(
+//   v: T,
+// ): v is T extends $ReadOnlyArray<mixed> ? T : empty;
+```
+
+**3. 批量替换新 Flow 语法**
+
+在 `react` 目录下执行：
+
+```bash
+find . -type f \( -name "*.js" -o -name "*.jsx" \) \
+  -not -path "*/__tests__/*" \
+  -exec perl -i -pe 's/component\(\.\.\.props:\s*any\)/any/g; s/:\s*(\d+|true|false|null)\s+as\s+\w+/: $1/g; s/component\(\)/Function/g' {} \;
+```
+
+此命令会替换 `component()` 类型声明和类型断言语法，排除测试文件。
 
 最后执行命令：
 
