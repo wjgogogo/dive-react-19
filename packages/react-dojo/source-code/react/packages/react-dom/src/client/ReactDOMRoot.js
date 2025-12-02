@@ -39,7 +39,7 @@ export type CreateRootOptions = {
     error: mixed,
     errorInfo: {
       +componentStack?: ?string,
-      +errorBoundary?: ?component(...props: any),
+      +errorBoundary?: ?any,
     },
   ) => void,
   onRecoverableError?: (
@@ -65,7 +65,7 @@ export type HydrateRootOptions = {
     error: mixed,
     errorInfo: {
       +componentStack?: ?string,
-      +errorBoundary?: ?component(...props: any),
+      +errorBoundary?: ?any,
     },
   ) => void,
   onRecoverableError?: (

@@ -106,7 +106,7 @@ function wwwOnCaughtError(
   error: mixed,
   errorInfo: {
     +componentStack?: ?string,
-    +errorBoundary?: ?component(),
+    +errorBoundary?: ?Function,
   },
 ): void {
   const errorBoundary = errorInfo.errorBoundary;
@@ -218,7 +218,7 @@ const noopOnRecoverableError = noop;
 function legacyCreateRootFromDOMContainer(
   container: Container,
   initialChildren: ReactNodeList,
-  parentComponent: ?component(...props: any),
+  parentComponent: ?any,
   callback: ?Function,
   isHydrationContainer: boolean,
 ): FiberRoot {
@@ -316,12 +316,12 @@ function warnOnInvalidCallback(callback: mixed): void {
 }
 
 function legacyRenderSubtreeIntoContainer(
-  parentComponent: ?component(...props: any),
+  parentComponent: ?any,
   children: ReactNodeList,
   container: Container,
   forceHydrate: boolean,
   callback: ?Function,
-): component(...props: any) | PublicInstance | null {
+): any | PublicInstance | null {
   if (__DEV__) {
     topLevelUpdateWarnings(container);
     warnOnInvalidCallback(callback === undefined ? null : callback);
@@ -354,7 +354,7 @@ function legacyRenderSubtreeIntoContainer(
 }
 
 export function findDOMNode(
-  componentOrElement: Element | ?component(...props: any),
+  componentOrElement: Element | ?any,
 ): null | Element | Text {
   if (__DEV__) {
     const owner = currentOwner;
@@ -389,7 +389,7 @@ export function render(
   element: React$Element<any>,
   container: Container,
   callback: ?Function,
-): component(...props: any) | PublicInstance | null {
+): any | PublicInstance | null {
   if (disableLegacyMode) {
     if (__DEV__) {
       console.error(

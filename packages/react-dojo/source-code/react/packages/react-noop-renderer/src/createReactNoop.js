@@ -1393,7 +1393,7 @@ function createReactNoop(reconciler: Function, useMutation: boolean) {
     },
 
     findInstance(
-      componentOrElement: Element | ?component(...props: any),
+      componentOrElement: Element | ?any,
     ): null | Instance | TextInstance {
       if (componentOrElement == null) {
         return null;

@@ -37,7 +37,7 @@ import {
   unstable_setDisableYieldValue,
 } from './Scheduler';
 
-declare const __REACT_DEVTOOLS_GLOBAL_HOOK__: Object | void;
+declare var __REACT_DEVTOOLS_GLOBAL_HOOK__: Object | void;
 
 let rendererID = null;
 let injectedHook = null;

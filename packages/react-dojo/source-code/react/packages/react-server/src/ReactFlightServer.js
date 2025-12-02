@@ -479,7 +479,7 @@ type ReactJSONValue =
 // Serializable values
 export type ReactClientValue =
   // Server Elements and Lazy Components are unwrapped on the Server
-  | React$Element<component(...props: any)>
+  | React$Element<any>
   | LazyComponent<ReactClientValue, any>
   // References are passed by their value
   | ClientReference<any>

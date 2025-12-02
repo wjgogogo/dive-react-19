@@ -474,7 +474,7 @@ function create(
   toTree(): mixed,
   update(newElement: React$Element<any>): any,
   unmount(): void,
-  getInstance(): component(...props: any) | PublicInstance | null,
+  getInstance(): any | PublicInstance | null,
   unstable_flushSync: typeof flushSyncFromReconciler,
 } {
   if (__DEV__) {

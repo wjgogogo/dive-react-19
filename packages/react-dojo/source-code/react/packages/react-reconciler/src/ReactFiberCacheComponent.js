@@ -25,7 +25,7 @@ const AbortControllerLocal: typeof AbortController =
       function AbortControllerShim() {
         const listeners = [];
         const signal = (this.signal = {
-          aborted: false as boolean,
+          aborted: false,
           addEventListener: (type, listener) => {
             listeners.push(listener);
           },
