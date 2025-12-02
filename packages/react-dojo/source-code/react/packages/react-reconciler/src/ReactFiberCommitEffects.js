@@ -7,24 +7,35 @@
  * @flow
  */
 
+import type {
+  ViewTransitionProps,
+  ProfilerProps,
+  ProfilerPhase,
+} from 'shared/ReactTypes';
 import type {Fiber} from './ReactInternalTypes';
 import type {UpdateQueue} from './ReactFiberClassUpdateQueue';
 import type {FunctionComponentUpdateQueue} from './ReactFiberHooks';
 import type {HookFlags} from './ReactHookEffectTags';
+import type {FragmentInstanceType} from './ReactFiberConfig';
+import type {ViewTransitionState} from './ReactFiberViewTransitionComponent';
+
+import {getViewTransitionName} from './ReactFiberViewTransitionComponent';
 
 import {
   enableProfilerTimer,
   enableProfilerCommitHooks,
   enableProfilerNestedUpdatePhase,
   enableSchedulingProfiler,
-  enableScopeAPI,
+  enableViewTransition,
+  enableFragmentRefs,
 } from 'shared/ReactFeatureFlags';
 import {
   ClassComponent,
+  Fragment,
   HostComponent,
   HostHoistable,
   HostSingleton,
-  ScopeComponent,
+  ViewTransitionComponent,
 } from './ReactWorkTags';
 import {NoFlags} from './ReactFiberFlags';
 import getComponentNameFromFiber from 'react-reconciler/src/getComponentNameFromFiber';
@@ -39,7 +50,11 @@ import {
   commitCallbacks,
   commitHiddenCallbacks,
 } from './ReactFiberClassUpdateQueue';
-import {getPublicInstance} from './ReactFiberConfig';
+import {
+  getPublicInstance,
+  createViewTransitionInstance,
+  createFragmentInstance,
+} from './ReactFiberConfig';
 import {
   captureCommitPhaseError,
   setIsRunningInsertionEffect,
@@ -184,6 +199,7 @@ export function commitHookEffectListMount(
                 addendum =
                   ' You returned null. If your effect does not require clean ' +
                   'up, return undefined (or nothing).';
+                // $FlowFixMe (@poteto) this check is safe on arbitrary non-null/void objects
               } else if (typeof destroy.then === 'function') {
                 addendum =
                   '\n\nIt looks like you wrote ' +
@@ -202,6 +218,7 @@ export function commitHookEffectListMount(
                   `}, [someId]); // Or [] if effect doesn't need props or state\n\n` +
                   'Learn more about data fetching with Hooks: https://react.dev/link/hooks-data-fetching';
               } else {
+                // $FlowFixMe[unsafe-addition] (@poteto)
                 addendum = ' You returned: ' + destroy;
               }
               runWithFiberInDEV(
@@ -393,7 +410,6 @@ export function commitClassLayoutLifecycles(
     const prevProps = resolveClassComponentProps(
       finishedWork.type,
       current.memoizedProps,
-      finishedWork.elementType === finishedWork.type,
     );
     const prevState = current.memoizedState;
     // We could update instance props and state here,
@@ -654,7 +670,6 @@ export function commitClassSnapshot(finishedWork: Fiber, current: Fiber) {
     const resolvedPrevProps = resolveClassComponentProps(
       finishedWork.type,
       prevProps,
-      finishedWork.elementType === finishedWork.type,
     );
     let snapshot;
     if (__DEV__) {
@@ -699,7 +714,6 @@ export function safelyCallComponentWillUnmount(
   instance.props = resolveClassComponentProps(
     current.type,
     current.memoizedProps,
-    current.elementType === current.type,
   );
   instance.state = current.memoizedState;
   if (shouldProfile(current)) {
@@ -742,20 +756,39 @@ export function safelyCallComponentWillUnmount(
 function commitAttachRef(finishedWork: Fiber) {
   const ref = finishedWork.ref;
   if (ref !== null) {
-    const instance = finishedWork.stateNode;
     let instanceToUse;
     switch (finishedWork.tag) {
       case HostHoistable:
       case HostSingleton:
       case HostComponent:
-        instanceToUse = getPublicInstance(instance);
+        instanceToUse = getPublicInstance(finishedWork.stateNode);
         break;
+      case ViewTransitionComponent: {
+        if (enableViewTransition) {
+          const instance: ViewTransitionState = finishedWork.stateNode;
+          const props: ViewTransitionProps = finishedWork.memoizedProps;
+          const name = getViewTransitionName(props, instance);
+          if (instance.ref === null || instance.ref.name !== name) {
+            instance.ref = createViewTransitionInstance(name);
+          }
+          instanceToUse = instance.ref;
+          break;
+        }
+        instanceToUse = finishedWork.stateNode;
+        break;
+      }
+      case Fragment:
+        if (enableFragmentRefs) {
+          const instance: null | FragmentInstanceType = finishedWork.stateNode;
+          if (instance === null) {
+            finishedWork.stateNode = createFragmentInstance(finishedWork);
+          }
+          instanceToUse = finishedWork.stateNode;
+          break;
+        }
+      // Fallthrough
       default:
-        instanceToUse = instance;
-    }
-    // Moved outside to ensure DCE works with this flag
-    if (enableScopeAPI && finishedWork.tag === ScopeComponent) {
-      instanceToUse = instance;
+        instanceToUse = finishedWork.stateNode;
     }
     if (typeof ref === 'function') {
       if (shouldProfile(finishedWork)) {
@@ -876,19 +909,23 @@ export function safelyDetachRef(
 function safelyCallDestroy(
   current: Fiber,
   nearestMountedAncestor: Fiber | null,
-  destroy: () => void,
+  destroy: (() => void) | (({...}) => void),
+  resource?: {...} | void | null,
 ) {
+  // $FlowFixMe[extra-arg] @poteto this is safe either way because the extra arg is ignored if it's not a CRUD effect
+  const destroy_ = resource == null ? destroy : destroy.bind(null, resource);
   if (__DEV__) {
     runWithFiberInDEV(
       current,
       callDestroyInDEV,
       current,
       nearestMountedAncestor,
-      destroy,
+      destroy_,
     );
   } else {
     try {
-      destroy();
+      // $FlowFixMe(incompatible-call) Already bound to resource
+      destroy_();
     } catch (error) {
       captureCommitPhaseError(current, nearestMountedAncestor, error);
     }
@@ -901,9 +938,9 @@ function commitProfiler(
   commitStartTime: number,
   effectDuration: number,
 ) {
-  const {id, onCommit, onRender} = finishedWork.memoizedProps;
+  const {id, onCommit, onRender} = (finishedWork.memoizedProps: ProfilerProps);
 
-  let phase = current === null ? 'mount' : 'update';
+  let phase: ProfilerPhase = current === null ? 'mount' : 'update';
   if (enableProfilerNestedUpdatePhase) {
     if (isCurrentUpdateNested()) {
       phase = 'nested-update';
@@ -914,8 +951,11 @@ function commitProfiler(
     onRender(
       id,
       phase,
+      // $FlowFixMe: This should be always a number in profiling mode
       finishedWork.actualDuration,
+      // $FlowFixMe: This should be always a number in profiling mode
       finishedWork.treeBaseDuration,
+      // $FlowFixMe: This should be always a number in profiling mode
       finishedWork.actualStartTime,
       commitStartTime,
     );
@@ -923,12 +963,7 @@ function commitProfiler(
 
   if (enableProfilerCommitHooks) {
     if (typeof onCommit === 'function') {
-      onCommit(
-        finishedWork.memoizedProps.id,
-        phase,
-        effectDuration,
-        commitStartTime,
-      );
+      onCommit(id, phase, effectDuration, commitStartTime);
     }
   }
 }

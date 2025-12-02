@@ -27,7 +27,7 @@ export type BridgeProtocol = {
   // Version supported by the current frontend/backend.
   version: number,
 
-  // NPM version range that also supports this version.
+  // NPM version range of `react-devtools-inline` that also supports this version.
   // Note that 'maxNpmVersion' is only set when the version is bumped.
   minNpmVersion: string,
   maxNpmVersion: string | null,
@@ -65,6 +65,12 @@ export const BRIDGE_PROTOCOL: Array<BridgeProtocol> = [
   {
     version: 2,
     minNpmVersion: '4.22.0',
+    maxNpmVersion: '6.2.0',
+  },
+  // Version 3 adds supports-toggling-suspense bit to add-root
+  {
+    version: 3,
+    minNpmVersion: '6.2.0',
     maxNpmVersion: null,
   },
 ];
@@ -85,6 +91,10 @@ type HighlightHostInstance = {
   hideAfterTimeout: boolean,
   openBuiltinElementsPanel: boolean,
   scrollIntoView: boolean,
+};
+
+type ScrollToHostInstance = {
+  ...ElementAndRendererID,
 };
 
 type OverrideValue = {
@@ -134,6 +144,12 @@ type OverrideSuspense = {
   forceFallback: boolean,
 };
 
+type OverrideSuspenseMilestone = {
+  rendererID: number,
+  rootID: number,
+  suspendedSet: Array<number>,
+};
+
 type CopyElementPathParams = {
   ...ElementAndRendererID,
   path: Array<string | number>,
@@ -178,6 +194,7 @@ export type BackendEvents = {
   backendInitialized: [],
   backendVersion: [string],
   bridgeProtocol: [BridgeProtocol],
+  enableSuspenseTab: [],
   extensionBackendInitialized: [],
   fastRefreshScheduled: [],
   getSavedPreferences: [],
@@ -217,6 +234,8 @@ type FrontendEvents = {
   clearWarningsForElementID: [ElementAndRendererID],
   copyElementPath: [CopyElementPathParams],
   deletePath: [DeletePath],
+  extensionComponentsPanelShown: [],
+  extensionComponentsPanelHidden: [],
   getBackendVersion: [],
   getBridgeProtocol: [],
   getIfHasUnsupportedRendererVersion: [],
@@ -228,6 +247,7 @@ type FrontendEvents = {
   logElementToConsole: [ElementAndRendererID],
   overrideError: [OverrideError],
   overrideSuspense: [OverrideSuspense],
+  overrideSuspenseMilestone: [OverrideSuspenseMilestone],
   overrideValueAtPath: [OverrideValueAtPath],
   profilingData: [ProfilingDataBackend],
   reloadAndProfile: [ReloadAndProfilingParams],
@@ -238,6 +258,7 @@ type FrontendEvents = {
   startInspectingHost: [],
   startProfiling: [StartProfilingParams],
   stopInspectingHost: [boolean],
+  scrollToHostInstance: [ScrollToHostInstance],
   stopProfiling: [],
   storeAsGlobal: [StoreAsGlobalParams],
   updateComponentFilters: [Array<ComponentFilter>],
@@ -311,7 +332,7 @@ class Bridge<
 
   send<EventName: $Keys<OutgoingEvents>>(
     event: EventName,
-    ...payload: $ElementType<OutgoingEvents, EventName>
+    ...payload: OutgoingEvents[EventName]
   ) {
     if (this._isShutdown) {
       console.warn(

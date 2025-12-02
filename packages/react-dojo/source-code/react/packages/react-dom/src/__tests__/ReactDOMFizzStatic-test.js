@@ -106,7 +106,10 @@ describe('ReactDOMFizzStatic', () => {
           node.tagName !== 'TEMPLATE' &&
           node.tagName !== 'template' &&
           !node.hasAttribute('hidden') &&
-          !node.hasAttribute('aria-hidden')
+          !node.hasAttribute('aria-hidden') &&
+          // Ignore the render blocking expect
+          (node.getAttribute('rel') !== 'expect' ||
+            node.getAttribute('blocking') !== 'render')
         ) {
           const props = {};
           const attributes = node.attributes;
@@ -413,7 +416,11 @@ describe('ReactDOMFizzStatic', () => {
       return <div>aborted</div>;
     }
 
+    const errors = [];
     const pendingResult = ReactDOMFizzStatic.prerenderToNodeStream(<App />, {
+      onError: error => {
+        errors.push(error);
+      },
       signal: controller.signal,
     });
     pendingResult.catch(() => {});
@@ -427,6 +434,7 @@ describe('ReactDOMFizzStatic', () => {
       result.prelude.pipe(writable);
     });
     expect(getVisibleChildren(container)).toEqual(undefined);
+    expect(errors).toEqual([]);
   });
 
   // @gate enablePostpone
@@ -444,13 +452,18 @@ describe('ReactDOMFizzStatic', () => {
       return <div>aborted</div>;
     }
 
+    const errors = [];
     const result = await ReactDOMFizzStatic.prerenderToNodeStream(<App />, {
+      onError: error => {
+        errors.push(error);
+      },
       signal: controller.signal,
     });
     await act(async () => {
       result.prelude.pipe(writable);
     });
     expect(getVisibleChildren(container)).toEqual(undefined);
+    expect(errors).toEqual([]);
   });
 
   // @gate enableHalt

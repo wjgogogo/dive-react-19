@@ -60,6 +60,10 @@ function ConditionalJsx({shouldWrap}) {
   return content;
 }
 
+function ComponentWithSpreadPropsAndRef({ref, ...other}) {
+  return <Foo ref={ref} {...other} />;
+}
+
 // TODO: Support value blocks
 function TernaryJsx({cond}) {
   return cond ? <div /> : null;
@@ -79,10 +83,10 @@ export const FIXTURE_ENTRYPOINT = {
 import { c as _c2 } from "react/compiler-runtime"; // @inlineJsxTransform
 
 function Parent(t0) {
-  const $ = _c2(2);
+  const $ = _c2(3);
   const { children, ref } = t0;
   let t1;
-  if ($[0] !== children) {
+  if ($[0] !== children || $[1] !== ref) {
     if (DEV) {
       t1 = <div ref={ref}>{children}</div>;
     } else {
@@ -91,13 +95,14 @@ function Parent(t0) {
         type: "div",
         ref: ref,
         key: null,
-        props: { children: children },
+        props: { ref: ref, children: children },
       };
     }
     $[0] = children;
-    $[1] = t1;
+    $[1] = ref;
+    $[2] = t1;
   } else {
-    t1 = $[1];
+    t1 = $[2];
   }
   return t1;
 }
@@ -180,7 +185,7 @@ function ParentAndRefAndKey(props) {
         type: Parent,
         ref: testRef,
         key: "testKey",
-        props: { a: "a", b: { b: "b" }, c: C },
+        props: { a: "a", b: { b: "b" }, c: C, ref: testRef },
       };
     }
     $[0] = t0;
@@ -385,6 +390,7 @@ function ConditionalJsx(t0) {
     t1 = $[0];
   }
   let content = t1;
+
   if (shouldWrap) {
     const t2 = content;
     let t3;
@@ -407,6 +413,41 @@ function ConditionalJsx(t0) {
     content = t3;
   }
   return content;
+}
+
+function ComponentWithSpreadPropsAndRef(t0) {
+  const $ = _c2(6);
+  let other;
+  let ref;
+  if ($[0] !== t0) {
+    ({ ref, ...other } = t0);
+    $[0] = t0;
+    $[1] = other;
+    $[2] = ref;
+  } else {
+    other = $[1];
+    ref = $[2];
+  }
+  let t1;
+  if ($[3] !== other || $[4] !== ref) {
+    if (DEV) {
+      t1 = <Foo ref={ref} {...other} />;
+    } else {
+      t1 = {
+        $$typeof: Symbol.for("react.transitional.element"),
+        type: Foo,
+        ref: ref,
+        key: null,
+        props: { ref: ref, ...other },
+      };
+    }
+    $[3] = other;
+    $[4] = ref;
+    $[5] = t1;
+  } else {
+    t1 = $[5];
+  }
+  return t1;
 }
 
 // TODO: Support value blocks

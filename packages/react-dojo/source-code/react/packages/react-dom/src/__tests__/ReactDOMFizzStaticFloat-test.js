@@ -27,22 +27,20 @@ let ReactDOMFizzServer;
 let ReactDOMFizzStatic;
 let Suspense;
 let container;
-let Scheduler;
 let act;
+let serverAct;
 
 describe('ReactDOMFizzStaticFloat', () => {
   beforeEach(() => {
     jest.resetModules();
-    Scheduler = require('scheduler');
-    patchMessageChannel(Scheduler);
+    patchMessageChannel();
     act = require('internal-test-utils').act;
+    serverAct = require('internal-test-utils').serverAct;
 
     React = require('react');
     ReactDOM = require('react-dom');
     ReactDOMFizzServer = require('react-dom/server.browser');
-    if (__EXPERIMENTAL__) {
-      ReactDOMFizzStatic = require('react-dom/static.browser');
-    }
+    ReactDOMFizzStatic = require('react-dom/static.browser');
     Suspense = React.Suspense;
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -51,17 +49,6 @@ describe('ReactDOMFizzStaticFloat', () => {
   afterEach(() => {
     document.body.removeChild(container);
   });
-
-  async function serverAct(callback) {
-    let maybePromise;
-    await act(() => {
-      maybePromise = callback();
-      if (maybePromise && typeof maybePromise.catch === 'function') {
-        maybePromise.catch(() => {});
-      }
-    });
-    return maybePromise;
-  }
 
   async function readIntoContainer(stream) {
     const reader = stream.getReader();

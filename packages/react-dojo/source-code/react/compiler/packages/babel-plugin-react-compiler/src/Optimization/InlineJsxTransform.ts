@@ -21,6 +21,7 @@ import {
   InstructionKind,
   JsxAttribute,
   makeInstructionId,
+  makePropertyLiteral,
   ObjectProperty,
   Phi,
   Place,
@@ -41,6 +42,7 @@ import {
   mapInstructionValueOperands,
   mapTerminalOperands,
 } from '../HIR/visitors';
+import {ErrorCategory} from '../CompilerError';
 
 type InlinedJsxDeclarationMap = Map<
   DeclarationId,
@@ -82,6 +84,7 @@ export function inlineJsxTransform(
           kind: 'CompileDiagnostic',
           fnLoc: null,
           detail: {
+            category: ErrorCategory.Todo,
             reason: 'JSX Inlining is not supported on value blocks',
             loc: instr.loc,
           },
@@ -150,6 +153,7 @@ export function inlineJsxTransform(
               type: null,
               loc: instr.value.loc,
             },
+            effects: null,
             loc: instr.loc,
           };
           currentBlockInstructions.push(varInstruction);
@@ -166,6 +170,7 @@ export function inlineJsxTransform(
               },
               loc: instr.value.loc,
             },
+            effects: null,
             loc: instr.loc,
           };
           currentBlockInstructions.push(devGlobalInstruction);
@@ -219,6 +224,7 @@ export function inlineJsxTransform(
               type: null,
               loc: instr.value.loc,
             },
+            effects: null,
             loc: instr.loc,
           };
           thenBlockInstructions.push(reassignElseInstruction);
@@ -291,6 +297,7 @@ export function inlineJsxTransform(
               ],
               loc: instr.value.loc,
             },
+            effects: null,
             loc: instr.loc,
           };
           elseBlockInstructions.push(reactElementInstruction);
@@ -308,6 +315,7 @@ export function inlineJsxTransform(
               type: null,
               loc: instr.value.loc,
             },
+            effects: null,
             loc: instr.loc,
           };
           elseBlockInstructions.push(reassignConditionalInstruction);
@@ -435,6 +443,7 @@ function createSymbolProperty(
       binding: {kind: 'Global', name: 'Symbol'},
       loc: instr.value.loc,
     },
+    effects: null,
     loc: instr.loc,
   };
   nextInstructions.push(symbolInstruction);
@@ -446,9 +455,10 @@ function createSymbolProperty(
     value: {
       kind: 'PropertyLoad',
       object: {...symbolInstruction.lvalue},
-      property: 'for',
+      property: makePropertyLiteral('for'),
       loc: instr.value.loc,
     },
+    effects: null,
     loc: instr.loc,
   };
   nextInstructions.push(symbolForInstruction);
@@ -462,6 +472,7 @@ function createSymbolProperty(
       value: symbolName,
       loc: instr.value.loc,
     },
+    effects: null,
     loc: instr.loc,
   };
   nextInstructions.push(symbolValueInstruction);
@@ -477,6 +488,7 @@ function createSymbolProperty(
       args: [symbolValueInstruction.lvalue],
       loc: instr.value.loc,
     },
+    effects: null,
     loc: instr.loc,
   };
   const $$typeofProperty: ObjectProperty = {
@@ -507,6 +519,7 @@ function createTagProperty(
           value: componentTag.name,
           loc: instr.value.loc,
         },
+        effects: null,
         loc: instr.loc,
       };
       tagProperty = {
@@ -546,41 +559,56 @@ function createPropsProperties(
   let refProperty: ObjectProperty | undefined;
   let keyProperty: ObjectProperty | undefined;
   const props: Array<ObjectProperty | SpreadPattern> = [];
-  const jsxAttributesWithoutKeyAndRef = propAttributes.filter(
-    p => p.kind === 'JsxAttribute' && p.name !== 'key' && p.name !== 'ref',
+  const jsxAttributesWithoutKey = propAttributes.filter(
+    p => p.kind === 'JsxAttribute' && p.name !== 'key',
   );
   const jsxSpreadAttributes = propAttributes.filter(
     p => p.kind === 'JsxSpreadAttribute',
   );
   const spreadPropsOnly =
-    jsxAttributesWithoutKeyAndRef.length === 0 &&
-    jsxSpreadAttributes.length === 1;
-
+    jsxAttributesWithoutKey.length === 0 && jsxSpreadAttributes.length === 1;
   propAttributes.forEach(prop => {
     switch (prop.kind) {
       case 'JsxAttribute': {
-        if (prop.name === 'ref') {
-          refProperty = {
-            kind: 'ObjectProperty',
-            key: {name: 'ref', kind: 'string'},
-            type: 'property',
-            place: {...prop.place},
-          };
-        } else if (prop.name === 'key') {
-          keyProperty = {
-            kind: 'ObjectProperty',
-            key: {name: 'key', kind: 'string'},
-            type: 'property',
-            place: {...prop.place},
-          };
-        } else {
-          const attributeProperty: ObjectProperty = {
-            kind: 'ObjectProperty',
-            key: {name: prop.name, kind: 'string'},
-            type: 'property',
-            place: {...prop.place},
-          };
-          props.push(attributeProperty);
+        switch (prop.name) {
+          case 'key': {
+            keyProperty = {
+              kind: 'ObjectProperty',
+              key: {name: 'key', kind: 'string'},
+              type: 'property',
+              place: {...prop.place},
+            };
+            break;
+          }
+          case 'ref': {
+            /**
+             * In the current JSX implementation, ref is both
+             * a property on the element and a property on props.
+             */
+            refProperty = {
+              kind: 'ObjectProperty',
+              key: {name: 'ref', kind: 'string'},
+              type: 'property',
+              place: {...prop.place},
+            };
+            const refPropProperty: ObjectProperty = {
+              kind: 'ObjectProperty',
+              key: {name: 'ref', kind: 'string'},
+              type: 'property',
+              place: {...prop.place},
+            };
+            props.push(refPropProperty);
+            break;
+          }
+          default: {
+            const attributeProperty: ObjectProperty = {
+              kind: 'ObjectProperty',
+              key: {name: prop.name, kind: 'string'},
+              type: 'property',
+              place: {...prop.place},
+            };
+            props.push(attributeProperty);
+          }
         }
         break;
       }
@@ -618,6 +646,7 @@ function createPropsProperties(
           elements: [...children],
           loc: instr.value.loc,
         },
+        effects: null,
         loc: instr.loc,
       };
       nextInstructions.push(childrenPropInstruction);
@@ -641,6 +670,7 @@ function createPropsProperties(
         value: null,
         loc: instr.value.loc,
       },
+      effects: null,
       loc: instr.loc,
     };
     refProperty = {
@@ -662,6 +692,7 @@ function createPropsProperties(
         value: null,
         loc: instr.value.loc,
       },
+      effects: null,
       loc: instr.loc,
     };
     keyProperty = {
@@ -678,7 +709,14 @@ function createPropsProperties(
     const spreadProp = jsxSpreadAttributes[0];
     CompilerError.invariant(spreadProp.kind === 'JsxSpreadAttribute', {
       reason: 'Spread prop attribute must be of kind JSXSpreadAttribute',
-      loc: instr.loc,
+      description: null,
+      details: [
+        {
+          kind: 'error',
+          loc: instr.loc,
+          message: null,
+        },
+      ],
     });
     propsProperty = {
       kind: 'ObjectProperty',
@@ -695,6 +733,7 @@ function createPropsProperties(
         properties: props,
         loc: instr.value.loc,
       },
+      effects: null,
       loc: instr.loc,
     };
     propsProperty = {

@@ -18,10 +18,12 @@ const baseURL = `http://localhost:${PORT}`;
 export default defineConfig({
   // Timeout per test
   timeout: 30 * 1000,
+  // Run all tests in parallel.
+  fullyParallel: true,
   // Test directory
   testDir: path.join(__dirname, '__tests__/e2e'),
   // If a test fails, retry it additional 2 times
-  retries: 2,
+  retries: 3,
   // Artifacts folder where screenshots, videos, and traces are stored.
   outputDir: 'test-results/',
   // Note: we only use text snapshots, so its safe to omit the host environment name
@@ -36,6 +38,10 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
   },
 
+  // 'github' for GitHub Actions CI to generate annotations, plus a concise 'dot'
+  // default 'list' when running locally
+  reporter: process.env.CI ? 'github' : 'list',
+
   use: {
     // Use baseURL so to make navigations relative.
     // More information: https://playwright.dev/docs/api/class-testoptions#test-options-base-url
@@ -49,12 +55,16 @@ export default defineConfig({
     // contextOptions: {
     //   ignoreHTTPSErrors: true,
     // },
+    viewport: {width: 1920, height: 1080},
   },
 
   projects: [
     {
       name: 'chromium',
-      use: {...devices['Desktop Chrome']},
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: {width: 1920, height: 1080},
+      },
     },
     // {
     //   name: 'Desktop Firefox',

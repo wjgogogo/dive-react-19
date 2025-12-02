@@ -43,6 +43,13 @@ import {enablePostpone, enableHalt} from 'shared/ReactFeatureFlags';
 import {ensureCorrectIsomorphicReactVersion} from '../shared/ensureCorrectIsomorphicReactVersion';
 ensureCorrectIsomorphicReactVersion();
 
+type NonceOption =
+  | string
+  | {
+      script?: string,
+      style?: string,
+    };
+
 type Options = {
   identifierPrefix?: string,
   namespaceURI?: string,
@@ -150,17 +157,16 @@ function prerender(
 }
 
 type ResumeOptions = {
-  nonce?: string,
+  nonce?: NonceOption,
   signal?: AbortSignal,
-  onError?: (error: mixed) => ?string,
-  onPostpone?: (reason: string) => void,
-  unstable_externalRuntimeSrc?: string | BootstrapScriptDescriptor,
+  onError?: (error: mixed, errorInfo: ErrorInfo) => ?string,
+  onPostpone?: (reason: string, postponeInfo: PostponeInfo) => void,
 };
 
 function resumeAndPrerender(
   children: ReactNodeList,
   postponedState: PostponedState,
-  options?: ResumeOptions,
+  options?: Omit<ResumeOptions, 'nonce'>,
 ): Promise<StaticResult> {
   return new Promise((resolve, reject) => {
     const onFatalError = reject;
@@ -191,10 +197,7 @@ function resumeAndPrerender(
     const request = resumeAndPrerenderRequest(
       children,
       postponedState,
-      resumeRenderState(
-        postponedState.resumableState,
-        options ? options.nonce : undefined,
-      ),
+      resumeRenderState(postponedState.resumableState, undefined),
       options ? options.onError : undefined,
       onAllReady,
       undefined,

@@ -55,11 +55,7 @@ function getNativeLogFunction(level) {
       if (arguments.length === 1 && typeof arguments[0] === "string") {
         str = arguments[0];
       } else {
-        str = Array.prototype.map
-          .call(arguments, function (arg) {
-            return inspect(arg, { depth: 10 });
-          })
-          .join(", ");
+        str = Array.prototype.map.call(arguments, _temp).join(", ");
       }
 
       const firstArg = arguments[0];
@@ -71,6 +67,7 @@ function getNativeLogFunction(level) {
       ) {
         logLevel = LOG_LEVELS.warn;
       }
+
       if (global.__inspectorLog) {
         global.__inspectorLog(
           INSPECTOR_LEVELS[logLevel],
@@ -79,6 +76,7 @@ function getNativeLogFunction(level) {
           INSPECTOR_FRAMES_TO_SKIP,
         );
       }
+
       if (groupStack.length) {
         str = groupFormat("", str);
       }
@@ -91,6 +89,9 @@ function getNativeLogFunction(level) {
     t0 = $[1];
   }
   return t0;
+}
+function _temp(arg) {
+  return inspect(arg, { depth: 10 });
 }
 
 ```

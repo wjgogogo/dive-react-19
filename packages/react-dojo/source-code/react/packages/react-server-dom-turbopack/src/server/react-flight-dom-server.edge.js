@@ -11,6 +11,7 @@ export {
   renderToReadableStream,
   prerender,
   decodeReply,
+  decodeReplyFromAsyncIterable,
   decodeAction,
   decodeFormState,
   registerServerReference,

@@ -40,6 +40,7 @@ export function getOwnerIframe(node: HTMLElement): HTMLElement | null {
 // offset added to compensate for its border.
 export function getBoundingClientRectWithBorderOffset(node: HTMLElement): Rect {
   const dimensions = getElementDimensions(node);
+  // $FlowFixMe[incompatible-variance]
   return mergeRectOffsets([
     node.getBoundingClientRect(),
     {
@@ -102,8 +103,10 @@ export function getNestedBoundingClientRect(
       }
     }
 
+    // $FlowFixMe[incompatible-variance]
     return mergeRectOffsets(rects);
   } else {
+    // $FlowFixMe[incompatible-variance]
     return node.getBoundingClientRect();
   }
 }
@@ -136,5 +139,30 @@ export function getElementDimensions(domElement: HTMLElement): {
     paddingRight: parseInt(calculatedStyle.paddingRight, 10),
     paddingTop: parseInt(calculatedStyle.paddingTop, 10),
     paddingBottom: parseInt(calculatedStyle.paddingBottom, 10),
+  };
+}
+
+export function extractHOCNames(displayName: string): {
+  baseComponentName: string,
+  hocNames: string[],
+} {
+  if (!displayName) return {baseComponentName: '', hocNames: []};
+
+  const hocRegex = /([A-Z][a-zA-Z0-9]*?)\((.*)\)/g;
+  const hocNames: string[] = [];
+  let baseComponentName = displayName;
+  let match;
+
+  while ((match = hocRegex.exec(baseComponentName)) != null) {
+    if (Array.isArray(match)) {
+      const [, hocName, inner] = match;
+      hocNames.push(hocName);
+      baseComponentName = inner;
+    }
+  }
+
+  return {
+    baseComponentName,
+    hocNames,
   };
 }
