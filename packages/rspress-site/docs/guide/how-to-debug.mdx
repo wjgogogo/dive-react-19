@@ -41,7 +41,7 @@ pnpm install && pnpm react:dev
 ![](/debug-vscode.png)
 
 :::tip
-本仓库使用的是 React v19.2.0 版本，对应的 tag 为 [v19.2.0](https://github.com/facebook/react/tree/v19.2.0)。
+本仓库使用的是 React v19.2.4 版本，对应的 tag 为 [v19.2.4](https://github.com/facebook/react/tree/v19.2.4)。
 :::
 
 ## 使用 Webpack 调试 React 源码
@@ -55,7 +55,7 @@ pnpm install && pnpm react:dev
 在 `react-debug` 项目根目录下，执行命令获取 React 最新版代码：
 
 ```bash
-git clone https://github.com/facebook/react.git --branch v19.2.0 --depth 1
+git clone https://github.com/facebook/react.git --branch v19.2.4 --depth 1
 ```
 
 ### webpack 配置
@@ -262,7 +262,7 @@ export default ReactSharedInternals;
 
 ### 处理 Flow 语法兼容性
 
-React 19.2.0 源码使用了新的 Flow 语法特性（如 `component()` 类型），当前 @babel/parser 暂不支持。需要做以下处理：
+React 19.2.4 源码使用了新的 Flow 语法特性（如 `component()` 类型），当前 @babel/parser 暂不支持。需要做以下处理：
 
 **1. 修改 ReactFiberDevToolsHook.js**
 
