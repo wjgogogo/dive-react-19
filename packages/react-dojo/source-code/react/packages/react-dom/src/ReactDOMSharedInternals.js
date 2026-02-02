@@ -21,7 +21,7 @@ type ReactDOMInternals = {
   p /* currentUpdatePriority */: EventPriority,
   findDOMNode:
     | null
-    | ((componentOrElement: any) => null | Element | Text),
+    | ((componentOrElement: component(...props: any)) => null | Element | Text),
 };
 
 function requestFormReset(element: HTMLFormElement) {

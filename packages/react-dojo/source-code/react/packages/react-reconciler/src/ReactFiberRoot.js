@@ -176,7 +176,7 @@ export function createFiberRoot(
     error: mixed,
     errorInfo: {
       +componentStack?: ?string,
-      +errorBoundary?: ?any,
+      +errorBoundary?: ?component(...props: any),
     },
   ) => void,
   onRecoverableError: (

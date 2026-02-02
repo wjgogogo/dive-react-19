@@ -479,7 +479,7 @@ type ReactJSONValue =
 // Serializable values
 export type ReactClientValue =
   // Server Elements and Lazy Components are unwrapped on the Server
-  | React$Element<any>
+  | React$Element<component(...props: any)>
   | LazyComponent<ReactClientValue, any>
   // References are passed by their value
   | ClientReference<any>
@@ -546,6 +546,8 @@ type DeferredDebugStore = {
   retained: Map<number, ReactClientReference | string>,
   existing: Map<ReactClientReference | string, number>,
 };
+
+const __PROTO__ = '__proto__';
 
 const OPENING = 10;
 const OPEN = 11;
@@ -2672,7 +2674,7 @@ function serializePromiseID(id: number): string {
 }
 
 function serializeServerReferenceID(id: number): string {
-  return '$F' + id.toString(16);
+  return '$h' + id.toString(16);
 }
 
 function serializeSymbolReference(name: string): string {
@@ -3330,6 +3332,17 @@ function renderModelDestructive(
 ): ReactJSONValue {
   // Set the currently rendering model
   task.model = value;
+
+  if (__DEV__) {
+    if (parentPropertyName === __PROTO__) {
+      callWithDebugContextInDEV(request, task, () => {
+        console.error(
+          'Expected not to serialize an object with own property `__proto__`. When parsed this property will be omitted.%s',
+          describeObjectForErrorMessage(parent, parentPropertyName),
+        );
+      });
+    }
+  }
 
   // Special Symbol, that's very common.
   if (value === REACT_ELEMENT_TYPE) {

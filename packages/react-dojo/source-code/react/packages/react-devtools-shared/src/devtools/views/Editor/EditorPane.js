@@ -115,4 +115,4 @@ function EditorPane({selectedSource}: Props) {
     </div>
   );
 }
-export default (portaledContent(EditorPane): Function);
+export default (portaledContent(EditorPane): component());

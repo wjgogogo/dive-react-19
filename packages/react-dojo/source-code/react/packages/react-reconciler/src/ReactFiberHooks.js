@@ -1209,7 +1209,7 @@ function useMemoCache(size: number): Array<mixed> {
               ? currentMemoCache.data
               : // Clone the memo cache before each render (copy-on-write)
                 currentMemoCache.data.map(array => array.slice()),
-            index: 0,
+            index: 0 as number,
           };
         }
       }
@@ -1219,7 +1219,7 @@ function useMemoCache(size: number): Array<mixed> {
   if (memoCache == null) {
     memoCache = {
       data: [],
-      index: 0,
+      index: 0 as number,
     };
   }
   if (updateQueue === null) {

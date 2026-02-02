@@ -109,7 +109,7 @@ const flushSync: typeof flushSyncIsomorphic = disableLegacyMode
   : flushSyncFromReconciler;
 
 function findDOMNode(
-  componentOrElement: any,
+  componentOrElement: component(...props: any),
 ): null | Element | Text {
   return findHostInstance(componentOrElement);
 }

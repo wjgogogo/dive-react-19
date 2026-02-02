@@ -93,7 +93,7 @@ function nativeOnCaughtError(
   error: mixed,
   errorInfo: {
     +componentStack?: ?string,
-    +errorBoundary?: ?any,
+    +errorBoundary?: ?component(...props: any),
   },
 ): void {
   const errorBoundary = errorInfo.errorBoundary;

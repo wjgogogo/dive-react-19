@@ -273,7 +273,7 @@ type BaseFiberRootProperties = {
     error: mixed,
     errorInfo: {
       +componentStack?: ?string,
-      +errorBoundary?: ?any,
+      +errorBoundary?: ?component(...props: any),
     },
   ) => void,
   onRecoverableError: (
