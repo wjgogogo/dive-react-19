@@ -118,9 +118,9 @@ export function attach(
     if (componentLogsEntry === undefined) {
       componentLogsEntry = {
         errors: new Map(),
-        errorsCount: 0 as number,
+        errorsCount: 0,
         warnings: new Map(),
-        warningsCount: 0 as number,
+        warningsCount: 0,
       };
       componentInfoToComponentLogsMap.set(componentInfo, componentLogsEntry);
     }

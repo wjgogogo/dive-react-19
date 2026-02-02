@@ -48,7 +48,7 @@ type Type = symbol | number;
 
 type ComponentSelector = {
   $$typeof: Type,
-  value: component(),
+  value: Function,
 };
 
 type HasPseudoClassSelector = {
@@ -79,7 +79,7 @@ type Selector =
   | TestNameSelector;
 
 export function createComponentSelector(
-  component: component(),
+  component: Function,
 ): ComponentSelector {
   return {
     $$typeof: COMPONENT_TYPE,

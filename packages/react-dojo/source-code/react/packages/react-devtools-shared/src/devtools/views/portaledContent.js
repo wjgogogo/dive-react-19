@@ -17,8 +17,8 @@ import ThemeProvider from './ThemeProvider';
 export type Props = {portalContainer?: Element, ...};
 
 export default function portaledContent(
-  Component: component(...props: any),
-): component(...props: any) {
+  Component: any,
+): any {
   return function PortaledContent({portalContainer, ...rest}: Props) {
     const store = useContext(StoreContext);
 

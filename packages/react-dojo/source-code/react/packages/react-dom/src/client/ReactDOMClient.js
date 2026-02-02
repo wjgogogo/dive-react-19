@@ -41,7 +41,7 @@ if (__DEV__) {
 }
 
 function findDOMNode(
-  componentOrElement: component(...props: any),
+  componentOrElement: any,
 ): null | Element | Text {
   return findHostInstance(componentOrElement);
 }
