@@ -21,7 +21,7 @@ export const callout: AnnotationHandler = {
         {children}
         <div
           style={{ minWidth: `${column + 4}ch` }}
-          className="relative mt-2 w-fit max-w-md rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50/80 to-blue-50/60 p-3 text-sm whitespace-pre-wrap shadow-md backdrop-blur-md dark:border-slate-600/30 dark:from-slate-800/40 dark:to-slate-700/30"
+          className="relative mt-2 w-fit max-w-md rounded-lg border border-slate-200/60 bg-gradient-to-br from-slate-50/80 to-blue-50/60 p-3 text-sm whitespace-pre-wrap backdrop-blur-md dark:border-slate-600/30 dark:from-slate-800/40 dark:to-slate-700/30"
         >
           <div
             style={{ left: `${column}ch` }}

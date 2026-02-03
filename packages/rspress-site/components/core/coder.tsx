@@ -1,17 +1,11 @@
 import React from "react";
 import clsx from "clsx";
-import { useTheme } from "../hooks/useTheme";
 import { CopyButton } from "./copy-button";
 import { extractMaxHeight, extractTitle } from "./utils/meta-parser";
 import {
   Pre,
   RawCode,
-  highlight,
-  InlineAnnotation,
-  AnnotationHandler,
-  InnerLine,
-  InnerPre,
-  InnerToken
+  highlight
 } from "codehike/code";
 import { wordWrap } from "./annotation-handler/word-wrap";
 import { callout } from "./annotation-handler/callout";
@@ -27,16 +21,12 @@ import {
   CollapseContent
 } from "./annotation-handler/collapse";
 
-const THEMES = {
-  light: "material-lighter",
-  dark: "material-palenight"
-} as const;
+const CODE_THEME = "one-dark-pro";
 
 export const Coder: React.FC<{
   codeblock: RawCode;
   variant?: "default" | "tab";
 }> = ({ codeblock, variant = "default" }) => {
-  const theme = useTheme();
   const [highlighted, setHighlighted] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -44,7 +34,7 @@ export const Coder: React.FC<{
     const highlightCode = async () => {
       setIsLoading(true);
       try {
-        const result = await highlight(codeblock, THEMES[theme]);
+        const result = await highlight(codeblock, CODE_THEME);
         setHighlighted(result);
       } catch (error) {
         console.error("Code highlighting error:", error);
@@ -59,7 +49,7 @@ export const Coder: React.FC<{
     };
 
     highlightCode();
-  }, [codeblock, theme]);
+  }, [codeblock]);
 
   const title = React.useMemo(
     () => extractTitle(codeblock.meta),
@@ -71,40 +61,35 @@ export const Coder: React.FC<{
     [codeblock.meta]
   );
 
-  const renderTitle = () => {
-    return (
-      title && (
-        <div className="flex items-center justify-between rounded-t-lg border border-b-0 border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-2">
-            <span
-              className="max-w-md truncate text-sm font-medium text-gray-700 dark:text-gray-300"
-              title={title}
-            >
-              {title}
-            </span>
-            {codeblock.lang && (
-              <pre className="rounded bg-gray-200 px-2 py-0.5 font-mono text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                {codeblock.lang}
-              </pre>
-            )}
-          </div>
-        </div>
-      )
-    );
-  };
-
   if (isLoading) {
     return (
       <div className={clsx("group relative", variant !== "tab" && "my-6")}>
-        {renderTitle()}
+        {title && (
+          <div className="relative flex items-center rounded-t-md border border-b-0 border-gray-200 bg-gray-50 px-4 py-2.5 pr-12 dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center gap-2">
+              <span
+                className="max-w-md truncate text-sm font-medium text-gray-700 dark:text-gray-300"
+                title={title}
+              >
+                {title}
+              </span>
+              {codeblock.lang && (
+                <pre className="rounded bg-gray-200 px-2 py-0.5 font-mono text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                  {codeblock.lang}
+                </pre>
+              )}
+            </div>
+            <CopyButton text={highlighted?.code || codeblock.value} />
+          </div>
+        )}
         <div
           className={clsx(
             "border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900",
             variant === "tab"
-              ? "rounded-b-lg border-t-0"
+              ? "rounded-b-md border-t-0"
               : title
-                ? "rounded-b-lg"
-                : "rounded-lg"
+                ? "rounded-b-md"
+                : "rounded-md"
           )}
         >
           <div className="flex items-center">
@@ -119,9 +104,26 @@ export const Coder: React.FC<{
 
   return (
     <div className={clsx("group relative", variant !== "tab" && "my-6")}>
-      {renderTitle()}
+      {title && (
+        <div className="relative flex items-center rounded-t-md border border-b-0 border-gray-200 bg-gray-50 px-4 py-2.5 pr-12 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-center gap-2">
+            <span
+              className="max-w-md truncate text-sm font-medium text-gray-700 dark:text-gray-300"
+              title={title}
+            >
+              {title}
+            </span>
+            {codeblock.lang && (
+              <pre className="rounded bg-gray-200 px-2 py-0.5 font-mono text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                {codeblock.lang}
+              </pre>
+            )}
+          </div>
+          <CopyButton text={highlighted?.code || codeblock.value} />
+        </div>
+      )}
       <div className="relative">
-        <CopyButton text={highlighted?.code || codeblock.value} />
+        {!title && <CopyButton text={highlighted?.code || codeblock.value} />}
         <Pre
           code={highlighted}
           handlers={[
@@ -138,12 +140,12 @@ export const Coder: React.FC<{
             CollapseContent
           ]}
           className={clsx(
-            "overflow-auto border border-gray-200 bg-white p-2 text-sm shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-900",
+            "overflow-auto border border-gray-200 bg-white p-2 pr-12 text-sm transition-shadow dark:border-gray-700 dark:bg-gray-900",
             variant === "tab"
-              ? "rounded-b-lg border-t-0"
+              ? "rounded-b-md border-t-0"
               : title
-                ? "rounded-b-lg"
-                : "rounded-lg"
+                ? "rounded-b-md"
+                : "rounded-md"
           )}
           style={{
             maxHeight: maxHeight ? `${maxHeight}px` : undefined
