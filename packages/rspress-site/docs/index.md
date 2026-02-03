@@ -12,8 +12,8 @@ hero:
       text: GitHub
       link: https://github.com/wjgogogo/dive-react-19
   image:
-    src: /rspress-icon.png
-    alt: Rspress Logo
+    src: /site/hero.png
+    
 features:
   - title: 源码调试环境搭建
     details: 手把手教你如何搭建 React 19 源码调试环境，不再纸上谈兵，让源码阅读更加直观。

@@ -1,8 +1,5 @@
 import * as path from "path";
 import { defineConfig } from "rspress/config";
-import { pluginShiki } from "@rspress/plugin-shiki";
-import { pluginPreview } from "@rspress/plugin-preview";
-import { pluginPlayground } from "@rspress/plugin-playground";
 import pluginMermaid from "rspress-plugin-mermaid";
 import { remarkCodeHike } from "codehike/mdx";
 
@@ -10,14 +7,10 @@ export default defineConfig({
   base: "/dive-react-19/",
   root: path.join(__dirname, "docs"),
   globalStyles: path.join(__dirname, "theme/style.css"),
-  title: "React 19",
-
+  title: "React 19 源码解读",
   description: "React 19 深度源码解读",
-  icon: "/rspress-icon.png",
-  logo: {
-    light: "/rspress-light-logo.png",
-    dark: "/rspress-dark-logo.png"
-  },
+  icon: "/site/favicon.png",
+
   mediumZoom: {
     selector: ".rspress-doc img"
   },
