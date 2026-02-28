@@ -91,7 +91,7 @@ description: 创建和编辑 Excalidraw 技术示意图。当用户要求创建�
   "type": "text",
   "text": "内容",
   "fontSize": 20,
-  "fontFamily": 2,
+  "fontFamily": 5,
   "textAlign": "center",
   "verticalAlign": "middle",
   "containerId": null,
@@ -103,7 +103,7 @@ description: 创建和编辑 Excalidraw 技术示意图。当用户要求创建�
 
 | 属性 | 值 |
 |------|-----|
-| `fontFamily` | `1` Virgil（手绘），`2` Helvetica（专业），`3` Cascadia（代码） |
+| `fontFamily` | `5` ExcalFont（手写风，默认），`2` Helvetica（专业），`3` Cascadia（代码），`1` Virgil（休闲） |
 | `fontSize` | 标题 28-36，节标题 24，标签 20，描述 16，注释 14 |
 | `textAlign` | `"left"`, `"center"`, `"right"` |
 | `verticalAlign` | `"top"`, `"middle"` |
@@ -170,7 +170,7 @@ description: 创建和编辑 Excalidraw 技术示意图。当用户要求创建�
 1. 每个元素的 `id` 和 `seed` 必须全局唯一
 2. 使用描述性 ID 前缀：`rect-`、`text-`、`arrow-`、`diamond-`
 3. 元素间距保持 50-100px
-4. 技术文档用 `roughness: 0` + `fontFamily: 2`
+4. 默认使用 `fontFamily: 5`（ExcalFont 手写风），技术文档可用 `roughness: 0` + `fontFamily: 2`（Helvetica 专业风）
 5. 实线箭头表示主流程，虚线箭头表示响应/异步
 6. 绑定关系必须双向维护（形状的 boundElements 和箭头/文本的 binding/containerId）
 7. 文件存放在 `docs/public/diagrams/` 目录，按模块分类

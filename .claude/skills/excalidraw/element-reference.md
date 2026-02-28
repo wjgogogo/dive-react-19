@@ -88,7 +88,7 @@
   "type": "text",
   "text": "内容",
   "fontSize": 20,
-  "fontFamily": 2,
+  "fontFamily": 5,
   "textAlign": "center",
   "verticalAlign": "middle",
   "containerId": null,
@@ -102,7 +102,7 @@
 |------|------|
 | `text` | 显示文本，支持 `\n` 换行 |
 | `fontSize` | 常用：`14`, `16`, `20`, `24`, `28`, `36` |
-| `fontFamily` | `1` Virgil, `2` Helvetica, `3` Cascadia |
+| `fontFamily` | `5` ExcalFont（手写风，默认），`2` Helvetica（专业），`3` Cascadia（代码），`1` Virgil（休闲） |
 | `textAlign` | `"left"`, `"center"`, `"right"` |
 | `verticalAlign` | `"top"`, `"middle"` |
 | `containerId` | 容器元素 ID（绑定文本时） |
