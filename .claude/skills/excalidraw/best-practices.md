@@ -52,10 +52,10 @@
 | 注释 | 14 |
 
 ### 字体选择
-- `fontFamily: 5`（ExcalFont）：手写风，默认使用该字体
-- `fontFamily: 2`（Helvetica）：专业
-- `fontFamily: 3`（Cascadia）：代码、技术标注
-- `fontFamily: 1`（Virgil）：仅在明确要求休闲风格时使用
+- `fontFamily: 5`（ExcalFont）：默认且必须优先使用
+- `fontFamily: 2`（Helvetica）：仅在用户明确要求专业字体时使用
+- `fontFamily: 3`（Cascadia）：仅在用户明确要求代码风标注时使用
+- `fontFamily: 1`（Virgil）：仅在用户明确要求休闲风格时使用
 
 ### 容器内文本
 - 水平垂直居中
@@ -88,3 +88,6 @@
 6. 形状不一致 -- 相同概念用相同形状
 7. 箭头交叉 -- 重新路由避免
 8. 绑定关系单向 -- 必须双向维护
+9. 手工生成 `index`（order key）-- 不要输出该字段，避免 `invalid order key`
+10. 箭头起点不是 `[0,0]` -- 统一规范 points，避免后续编辑器兼容问题
+11. 默认字体不是 `fontFamily: 5` -- 未明确要求时不要切换字体
